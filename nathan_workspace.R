@@ -38,5 +38,5 @@ train = read_csv("train.csv")
 
 # Linear Discriminant Analysis / Quadratic Discriminant Analysis ??
 
-# MInclude model validation?
+# Include model validation?
 
