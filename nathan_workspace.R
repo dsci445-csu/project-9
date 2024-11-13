@@ -14,13 +14,19 @@ library(leaps)
 library(glmnet)
 library(pls)
 library(workflowsets)
+library(nnet) # multinom logistic reg
 
 
 test = read_csv("test.csv")
 train = read_csv("train.csv")
+# data_dictionary = read_csv("data_dictionary.csv")
+
+# PCIAT-PCIAT_Total 
+# PCIAT cols can be response
+# Non-binary categorical response: 4 possible outcomes
 
 
-# Logistic Regression
+# Multinomial Logistic Regression
 
 # K-Nearest Neighbors
 
@@ -32,4 +38,5 @@ train = read_csv("train.csv")
 
 # Linear Discriminant Analysis / Quadratic Discriminant Analysis ??
 
-# Maybe include model validation?
+# MInclude model validation?
+
