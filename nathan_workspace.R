@@ -27,6 +27,17 @@ train = read_csv("train.csv")
 
 
 # Multinomial Logistic Regression
+  
+train_modified = train %>%
+  mutate(
+    impairment_severity = case_when(
+      `PCIAT-PCIAT_Total` >= 0 & `PCIAT-PCIAT_Total` <= 30 ~ "None",
+      `PCIAT-PCIAT_Total` >= 31 & `PCIAT-PCIAT_Total` <= 49 ~ "Mild",
+      `PCIAT-PCIAT_Total` >= 50 & `PCIAT-PCIAT_Total` <= 79 ~ "Moderate",
+      `PCIAT-PCIAT_Total` >= 80 & `PCIAT-PCIAT_Total` <= 100 ~ "Severe"
+      ))
+
+
 
 # K-Nearest Neighbors
 
