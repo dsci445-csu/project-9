@@ -21,9 +21,6 @@ test = read_csv("test.csv")
 train = read_csv("train.csv")
 # data_dictionary = read_csv("data_dictionary.csv")
 
-# PCIAT-PCIAT_Total 
-# PCIAT cols can be response
-# Non-binary categorical response: 4 possible outcomes
 
 
 # Multinomial Logistic Regression
