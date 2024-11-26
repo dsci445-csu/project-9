@@ -29,6 +29,7 @@ quantitative_vars = train_clean %>% select(where(is.numeric) | 'sii')
 pciat_columns = grep("PCIAT", names(train_clean), value = TRUE)
 pciat_columns = pciat_columns[pciat_columns != "PCIAT_PCIAT_Total"]
 categorical_vars = cbind(categorical_vars, train_clean[, pciat_columns]) # Extract these columns and add them to the categorical variables
+# ---------------------------------------------------------------------------------------------------------------------- #
 
 
 # PERFORM SVM on quantitative dataset:
