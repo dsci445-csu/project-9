@@ -121,7 +121,7 @@ svm_plot = ggplot() +
 svm_plot
 # ---------------------------------------------------------------------------------------------------------------------- #
 
-# Perform SVM using cateogrical dataset:
+# Perform SVM using categorical dataset:
 
 train_categorical_vars_imputed = categorical_vars %>%
   mutate(across(where(is.factor) | where(is.character), 
