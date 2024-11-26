@@ -4,30 +4,27 @@ library(e1071)
 library(caret)       
 library(ggplot2)     
 
-
-
 test = read_csv("test.csv")
 train = read_csv("train.csv")
-# data_dictionary = read_csv("data_dictionary.csv")
 # ---------------------------------------------------------------------------------------------------------------------- #
 
-# Data Manipulation
-train_clean = train %>% select(-ends_with("Season")) 
-train_clean$sii = factor(train_clean$sii)
+# Data Manipulation:
 
-colnames(train_clean) = gsub("-", "_", colnames(train_clean))
+train_clean = train %>% select(-ends_with("Season")) # Season variables deemed unnecessary
+train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 factors (plus extra level for NAs later)
 
-train_clean$sii = factor(train_clean$sii, levels = c(levels(train_clean$sii), "Missing"))
+colnames(train_clean) = gsub("-", "_", colnames(train_clean)) # Replacing hyphens because R can't handle those
+
+train_clean$sii = factor(train_clean$sii, levels = c(levels(train_clean$sii), "Missing")) # Replacing NAs with new level
 train_clean$sii[is.na(train_clean$sii)] = "Missing"
 
 
-categorical_vars = train_clean %>% select(where(is.factor) | where(is.character) | 'sii')
-quantitative_vars = train_clean %>% select(where(is.numeric) | 'sii')
 
 # Identify columns that contain 'PCIAT' in their names but excluding 'PCIAT_PCIAT_Total'
 pciat_columns = grep("PCIAT", names(train_clean), value = TRUE)
 pciat_columns = pciat_columns[pciat_columns != "PCIAT_PCIAT_Total"]
 categorical_vars = cbind(categorical_vars, train_clean[, pciat_columns])
+
 # One-Versus-All SVM
 
 categorical_vars = train_clean %>%
@@ -50,32 +47,28 @@ train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 # Train SVM using the One-vs-All strategy (default for multi-class classification)
 svm_model_ova = svm(sii ~ ., data = train_data, kernel = "linear", type = "C-classification")
 
-# Step 3: Predict the class for the same data
 predictions = predict(svm_model_ova, train_data)
 
-# Step 4: Evaluate the model performance with a confusion matrix
+# Model performance with a confusion matrix
 confusion_matrix = table(predictions, train_data$sii)
 print(confusion_matrix)
 
-# You can use `caret` package to calculate metrics such as accuracy, precision, recall, etc.
 
 confusionMatrix(confusion_matrix)
+# ---------------------------------------------------------------------------------------------------------------------- #
 
-
-
-# Perform PCA to reduce to two dimensions
+# Graphing Decision Boundaries:
+# Perform PCA to reduce to two dimensions:
 pca = prcomp(train_data %>% select(where(is.numeric)), scale. = TRUE)
 
-# Extract the first two principal components
 train_pca = data.frame(pca$x[, 1:2])  # First two principal components
-train_pca$sii = train_data$sii  # Add the target variable
-train_pca = train_pca[train_pca$PC1 < 40,] # Removing outlier
+train_pca$sii = train_data$sii  # Add `sii` (response)
+train_pca = train_pca[train_pca$PC1 < 16 ,] # Removing outliers in PC1 (x)
 
 # Train the SVM model on the two principal components
-svm_model = svm(sii ~ PC1 + PC2, data = train_pca, kernel = "linear", type = "C-classification")
+svm_model = svm(sii ~ PC1 + PC2, data = train_pca, kernel = "radial", type = "C-classification")
 
 
-# Create a grid for the two principal components (PC1 and PC2)
 x_range = seq(min(train_pca$PC1) - 1, max(train_pca$PC1) + 1, length.out = 500)
 y_range = seq(min(train_pca$PC2) - 1, max(train_pca$PC2) + 1, length.out = 500)
 grid = expand.grid(PC1 = x_range, PC2 = y_range)
@@ -83,8 +76,8 @@ grid = expand.grid(PC1 = x_range, PC2 = y_range)
 # Predict the class for each point in the grid
 grid$pred = predict(svm_model, grid)
 
-# Plot the decision boundaries
-ggplot() +
+# Plotting decision boundaries
+ova_plot = ggplot() +
   geom_tile(data = grid, aes(x = PC1, y = PC2, fill = pred), alpha = 0.3) +  # Decision boundary
   geom_point(data = train_pca, aes(x = PC1, y = PC2, color = sii), size = 3) +  # Data points
   labs(title = "SVM Decision Boundaries",
@@ -94,3 +87,43 @@ ggplot() +
   scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) +
   theme_minimal() +
   theme(legend.position = "none")
+
+ova_plot
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+# 5-Fold CV for kernel choice
+
+train_data = train_pca %>%
+  select(PC1, PC2, sii) 
+
+set.seed(123)
+train_index = createDataPartition(train_data$sii, p = 0.8, list = FALSE)
+train_set = train_data[train_index, ]
+test_set = train_data[-train_index, ]
+
+cv_control = trainControl(method = "cv", number = 5)  # 10-fold too computationally heavy
+
+svm_linear = train(sii ~ PC1 + PC2, data = train_set, 
+                    method = "svmLinear", 
+                    trControl = cv_control,
+                    tuneLength = 5)  
+
+svm_poly = train(sii ~ PC1 + PC2, data = train_set, 
+                  method = "svmPoly", 
+                  trControl = cv_control,
+                  tuneLength = 5)  
+
+svm_rbf = train(sii ~ PC1 + PC2, data = train_set, 
+                 method = "svmRadial", 
+                 trControl = cv_control,
+                 tuneLength = 5)  
+
+print(svm_linear)
+print(svm_poly)
+print(svm_rbf)
+
+resamples_list = resamples(list(linear = svm_linear, poly = svm_poly, rbf = svm_rbf))
+summary(resamples_list)
+
+
+
