@@ -93,7 +93,6 @@ ova_plot
 train_data = train_pca %>%
   select(PC1, PC2, sii) 
 
-set.seed(123)
 train_index = createDataPartition(train_data$sii, p = 0.8, list = FALSE)
 train_set = train_data[train_index, ]
 test_set = train_data[-train_index, ]
