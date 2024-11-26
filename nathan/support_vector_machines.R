@@ -141,3 +141,38 @@ predictions_catg = predict(svm_model_catg, X)
 # Evaluate model performance (e.g., confusion matrix)
 confusion_matrix = table(predictions_catg, y)
 print(confusion_matrix)
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+# One-Versus-All SVM
+
+categorical_vars = train_clean %>%
+  select(where(is.factor) | where(is.character))  # Select categorical variables including 'sii'
+
+categorical_vars = categorical_vars %>%
+  mutate(across(everything(), ~ replace(., is.na(.), "Missing")))
+
+# Handling missing values in quantitative variables (impute with median)
+quantitative_vars = train_clean %>%
+  select(where(is.numeric))  # Select quantitative variables including 'sii'
+
+quantitative_vars_imputed = quantitative_vars %>%
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
+
+# Step 2: Train the SVM Model using the entire train_clean data (or just quantitative or categorical data)
+# Here we'll use the full dataset (with imputed values for quantitative variables)
+train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
+
+# Train SVM using the One-vs-All strategy (default for multi-class classification)
+svm_model_ova = svm(sii ~ ., data = train_data, kernel = "linear", type = "C-classification")
+
+# Step 3: Predict the class for the same data
+predictions = predict(svm_model_ova, train_data)
+
+# Step 4: Evaluate the model performance with a confusion matrix
+confusion_matrix = table(predictions, train_data$sii)
+print(confusion_matrix)
+
+# You can use `caret` package to calculate metrics such as accuracy, precision, recall, etc.
+
+confusionMatrix(confusion_matrix)
+
