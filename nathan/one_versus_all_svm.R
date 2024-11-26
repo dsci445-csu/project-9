@@ -34,11 +34,12 @@ quantitative_vars = train_clean %>%
 
 quantitative_vars_imputed = quantitative_vars %>%
   mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
+
+train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
+
 # ---------------------------------------------------------------------------------------------------------------------- #
 
 # One-Versus-All SVM
-
-train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 
 svm_model_ova = svm(sii ~ ., data = train_data, kernel = "radial", type = "C-classification")
 
