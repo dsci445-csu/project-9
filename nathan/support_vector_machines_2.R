@@ -39,11 +39,9 @@ train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 
-# One-Versus-All SVM
+svm_model = svm(sii ~ ., data = train_data, kernel = "radial", type = "C-classification")
 
-svm_model_ova = svm(sii ~ ., data = train_data, kernel = "radial", type = "C-classification")
-
-predictions = predict(svm_model_ova, train_data)
+predictions = predict(svm_model, train_data)
 
 # Model performance with a confusion matrix
 confusion_matrix = table(predictions, train_data$sii)
@@ -73,7 +71,7 @@ grid = expand.grid(PC1 = x_range, PC2 = y_range)
 grid$pred = predict(svm_model, grid)
 
 # Plotting decision boundaries
-ova_plot = ggplot() +
+plot1 = ggplot() +
   geom_tile(data = grid, aes(x = PC1, y = PC2, fill = pred), alpha = 0.3) +  # Decision boundary
   geom_point(data = train_pca, aes(x = PC1, y = PC2, color = sii), size = 2) +  # Data points
   labs(title = "SVM Decision Boundaries",
@@ -84,7 +82,7 @@ ova_plot = ggplot() +
   theme_minimal() +
   theme(legend.position = "none")
 
-ova_plot
+plot1
 # ---------------------------------------------------------------------------------------------------------------------- #
 
 # 5-Fold CV for kernel choice
