@@ -45,7 +45,7 @@ quantitative_vars_imputed = quantitative_vars %>%
 train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 
 # Train SVM using the One-vs-All strategy (default for multi-class classification)
-svm_model_ova = svm(sii ~ ., data = train_data, kernel = "linear", type = "C-classification")
+svm_model_ova = svm(sii ~ ., data = train_data, kernel = "radial", type = "C-classification")
 
 predictions = predict(svm_model_ova, train_data)
 
