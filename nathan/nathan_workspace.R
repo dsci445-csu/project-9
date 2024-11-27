@@ -35,10 +35,9 @@ test = read_csv("test.csv")
 train = read_csv("train.csv")
 data_dictionary = read_csv("data_dictionary.csv")
 
-train_clean = train %>% select(-ends_with("Season")) 
+colnames(train) = gsub("-", "_", colnames(train)) # Replacing hyphens because R can't handle those
+train_clean = train[, !grepl("Season", names(train))]
 train_clean$sii = factor(train_clean$sii)
-
-colnames(train_clean) = gsub("-", "_", colnames(train_clean))
 
 train_clean$sii = factor(train_clean$sii, levels = c(levels(train_clean$sii), "Missing"))
 train_clean$sii[is.na(train_clean$sii)] = "Missing"
