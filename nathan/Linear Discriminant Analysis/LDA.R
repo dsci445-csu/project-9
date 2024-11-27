@@ -6,7 +6,7 @@ library(recipes)
           library(parsnip)
             library(purrr)
               library(discrim)
-                library(yardstick)
+                library(tidyr)
                   library(lda)
                     library(VIM)
                       library(MASS)
@@ -73,18 +73,74 @@ accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
 print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 
 # ---------------------------------------------------------------------------------------------------------------------- #
+# LDA Visualization
+
+# Check if the number of linear discriminants is sufficient
+lda_discriminants = lda_predictions$x
+lda_discriminants = as.data.frame(lda_discriminants)
+lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
+
+if (ncol(lda_discriminants) >= 2) {
+  # Extract the first two linear discriminants
+  lda_data_train$LD1 = lda_discriminants[, 1]  # First Linear Discriminant
+  lda_data_train$LD2 = lda_discriminants[, 2]  # Second Linear Discriminant
+  lda_data_train_new = lda_data_train %>% filter(LD1 < -8)
+  # Plot the LDA results
+  ggplot(lda_data_train_new, aes(x = LD2, y = LD1, color = sii)) +
+    geom_point(alpha = 0.7) +
+    labs(title = "LDA: Linear Discriminants 2 vs 1",
+         x = "Linear Discriminant 2",
+         y = "Linear Discriminant 1") +
+    theme_minimal() +
+    scale_color_manual(values = c("red", "blue", "green", "purple", "orange"))  # Adjust colors as needed
+} else {
+  print("Insufficient linear discriminants for visualization.")
+}
+
+# ---------------------------------------------------------------------------------------------------------------------- #
+# DON'T RUN THIS, IT TAKES A LONG TIME 
+
+get_errors_multiclass = function(model, y, tau) {
+  posterior_probs = predict(model)$posterior
+  
+  predicted_class = apply(posterior_probs, 1, function(row) which.max(row) - 1)  # Convert probabilities to class indices
+  
+  conf = table(predicted_class, y)
+  
+  error_tot = sum(diag(conf)) / sum(conf)  # Total accuracy
+  total_error = 1 - error_tot  # Total error rate
+  
+  return(data.frame(total_error = total_error))
+}
+
+res = data.frame()
+
+for(tau in seq(0.0001, 0.5, by = 0.0001)) {
+  res = rbind(res, data.frame(threshold = tau, get_errors_multiclass(lda_model_train, lda_data_train$sii, tau)))
+}
+
+res_long = res %>%
+  gather(error, value, -threshold)
+
+plot1 = ggplot(res_long) +
+  geom_line(aes(x = threshold, y = value, colour = error)) +
+  labs(title = "Threshold vs Total Error Rate", x = "Threshold", y = "Error Rate") +
+  theme_minimal()
+
+# Save the plot as a PNG file
+# ggsave("plot1.png", plot = plot1, width = 8, height = 6, dpi = 300)
+
+
+# ---------------------------------------------------------------------------------------------------------------------- #
 # Testing
 # Read the test dataset
 test = read_csv("test.csv")
 
-# Replace hyphens in column names
 colnames(test) = gsub("-", "_", colnames(test))
 
-# Add 'sii' from train dataset based on 'id'
 train_sii = subset(train_clean, select = c(id, sii))
 test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
 
-# Ensure the 'sii' column is consistent with levels from train_clean
 test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
 test_clean = test_clean[, !grepl("Season", names(test_clean))]
 
@@ -94,7 +150,6 @@ categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x)
 
 # Select quantitative variables (numeric)
 quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
-
 
 # Combine quantitative and categorical variables before imputation
 test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
@@ -111,21 +166,16 @@ quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_im
 # Split back into categorical variables (factor or character) after imputation
 categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
 
-
 # Re-combine the imputed data
 # This is necessary because impuation method add logical variables into dataset
 test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
-
-# Ensure 'sii' is part of the dataset
 test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
 
-# Prepare data for LDA (ensure 'sii' is a factor)
 lda_data_test = test_data
 lda_data_test$sii = as.factor(lda_data_test$sii)
 
 # Remove 'id' column or any non-predictor columns, if necessary
 lda_data_test = subset(lda_data_test, select = -id)
-
 
 # Perform Linear Discriminant Analysis
 lda_model_test = lda(sii ~ ., data = lda_data_test)
