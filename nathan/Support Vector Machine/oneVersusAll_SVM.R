@@ -8,7 +8,8 @@ library(ggplot2)
 train = read_csv("train.csv")
 
 # Data Manipulation
-train_clean = train %>% select(-ends_with("Season"))
+colnames(train) = gsub("-", "_", colnames(train)) # Replacing hyphens because R can't handle those
+train_clean = train[, !grepl("Season", names(train))]
 train_clean$sii = factor(train_clean$sii)
 
 # Replacing any remaining NAs in the target variable 'sii' with the level 'Missing'
