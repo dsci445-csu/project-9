@@ -45,25 +45,25 @@ quantitative_vars_imputed = quantitative_vars %>% mutate(sii = train_data$sii)
 # ---------------------------------------------------------------------------------------------------------------------- #
 # Linear Discriminant Analysis
 
-lda_data = train_data
-lda_data$sii = as.factor(lda_data$sii)  # Ensure `sii` is a factor for LDA
+lda_data_train = train_data
+lda_data_train$sii = as.factor(lda_data_train$sii)  # Ensure `sii` is a factor for LDA
 
-lda_data = subset(lda_data, select = -id)
+lda_data_train = subset(lda_data_train, select = -id)
 
 # Perform Linear Discriminant Analysis
-lda_model = lda(sii ~ ., data = lda_data)
+lda_model_train = lda(sii ~ ., data = lda_data_train)
 
 # View the LDA model output
 print(lda_model)
 
 # Predicting using the LDA model
-lda_predictions = predict(lda_model, lda_data)
+lda_predictions = predict(lda_model_train, lda_data_train)
 
 # Add predictions to the original data
-lda_data$predicted_sii = lda_predictions$class
+lda_data_train$predicted_sii = lda_predictions$class
 
 # Confusion matrix to evaluate classification accuracy
-confusion_matrix = table(lda_data$sii, lda_data$predicted_sii)
+confusion_matrix = table(lda_data_train$sii, lda_data_train$predicted_sii)
 
 print("Confusion Matrix:")
 print(confusion_matrix)
@@ -120,25 +120,25 @@ test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_impu
 test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
 
 # Prepare data for LDA (ensure 'sii' is a factor)
-lda_data = test_data
-lda_data$sii = as.factor(lda_data$sii)
+lda_data_test = test_data
+lda_data_test$sii = as.factor(lda_data_test$sii)
 
 # Remove 'id' column or any non-predictor columns, if necessary
-lda_data = subset(lda_data, select = -id)
+lda_data_test = subset(lda_data_test, select = -id)
 
 
 # Perform Linear Discriminant Analysis
-lda_model = lda(sii ~ ., data = lda_data)
+lda_model_test = lda(sii ~ ., data = lda_data_test)
 
-print(lda_model)
+print(lda_model_test)
 
-lda_predictions = predict(lda_model, lda_data)
+lda_predictions = predict(lda_model_test, lda_data_test)
 
 # Add predictions to the original data
-lda_data$predicted_sii = lda_predictions$class
+lda_data_test$predicted_sii = lda_predictions$class
 
 # Confusion matrix:
-confusion_matrix = table(lda_data$sii, lda_data$predicted_sii)
+confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
 
 print("Confusion Matrix:")
 print(confusion_matrix)
@@ -147,6 +147,34 @@ print(confusion_matrix)
 accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
 print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 
-# PROBLEM: 100% accuracy
+# PROBLEM: 100% accuracy?
 # ---------------------------------------------------------------------------------------------------------------------- #
+
+# For the train dataset (numerical variables only)
+train_variances = apply(train_clean[, sapply(train_clean, is.numeric)], 2, var)
+
+# For the test dataset (numerical variables only)
+test_variances = apply(test_clean[, sapply(test_clean, is.numeric)], 2, var)
+
+# View the variances
+print("Train Dataset Variances:")
+print(train_variances)
+
+print("Test Dataset Variances:")
+print(test_variances)
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+# For the raw train dataset (numeric variables only)
+train_variances_raw = apply(train[, sapply(train, is.numeric)], 2, var)
+
+# For the raw test dataset (numeric variables only)
+test_variances_raw = apply(test[, sapply(test, is.numeric)], 2, var)
+
+# View the variances for the raw datasets
+print("Raw Train Dataset Variances (Numeric Variables Only):")
+print(train_variances_raw)
+
+print("Raw Test Dataset Variances (Numeric Variables Only):")
+print(test_variances_raw)
+
 
