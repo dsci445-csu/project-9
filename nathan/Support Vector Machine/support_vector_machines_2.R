@@ -2,18 +2,16 @@ library(readr)
 library(dplyr)       
 library(e1071)       
 library(caret)       
-library(ggplot2)     
+library(ggplot2)
 
 test = read_csv("test.csv")
 train = read_csv("train.csv")
 # ---------------------------------------------------------------------------------------------------------------------- #
 
 # Data Manipulation:
-
-train_clean = train %>% select(-ends_with("Season")) # Season variables deemed unnecessary
-train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 factors (plus extra level for NAs later)
-
-colnames(train_clean) = gsub("-", "_", colnames(train_clean)) # Replacing hyphens because R can't handle those
+colnames(train) = gsub("-", "_", colnames(train)) # Replacing hyphens because R can't handle those
+train_clean = train[, !grepl("Season", names(train))]
+train_clean$sii = factor(train_clean$sii) # Replacing hyphens because R can't handle those
 
 train_clean$sii = factor(train_clean$sii, levels = c(levels(train_clean$sii), "Missing")) # Replacing NAs with new level
 train_clean$sii[is.na(train_clean$sii)] = "Missing"
