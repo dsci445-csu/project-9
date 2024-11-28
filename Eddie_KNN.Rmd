@@ -1,0 +1,78 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Load Packages
+```{r}
+suppressMessages({
+suppressWarnings({
+library(class)
+library(dplyr)
+library(kableExtra)
+})
+})
+```
+
+# Set up data
+```{r}
+set.seed(445)
+cmi <- read.csv("train.csv")
+notimportant <- c("CGAS.Season", "Physical.Season", "Fitness_Endurance.Season",
+                  "FGC.Season", "BIA.Season", "Basic_Demos.Enroll_Season")
+
+
+# Find out how many NAs each variable has
+
+dfnas <- data.frame(colnames(cmi), rep(0, times = ncol(cmi)))
+for(i in 1:ncol(cmi)){
+  dfnas[i,2] <- sum(is.na(cmi[,i]))
+}
+colnames(dfnas) <- c("Variable", "Total_NAs")
+dfnas <- mutate(dfnas, "NA_Proportion" = round(Total_NAs/nrow(cmi),3))
+kable(filter(dfnas, NA_Proportion > 0.5))
+toomanynas <- filter(dfnas, NA_Proportion > 0.5)$Variable
+
+
+# Remove "bad" variables
+
+removevars <- c(notimportant, toomanynas)
+suppressWarnings(cmi <- select(cmi, -removevars))
+
+
+# Find out how many NAs each observation has
+
+dfnas2 <- data.frame(cmi$id, rep(0, times = nrow(cmi)))
+for(i in 1:nrow(cmi)){
+  dfnas2[i,2] <- sum(is.na(cmi[i,c(2:66)]))
+}
+colnames(dfnas2) <- c("ID", "Total_NAs")
+dfnas2 <- mutate(dfnas2, "NA_Proportion" = round(Total_NAs/ncol(cmi),3))
+sum(dfnas2$NA_Proportion > 0.5)
+
+
+# Remove "bad" observations
+
+toomanynas2 <- filter(dfnas2, NA_Proportion > 0.5)$ID
+kable(head(arrange(dfnas2, desc(NA_Proportion)),10))
+dfnas2 <- mutate(dfnas2, "Few_NAs" = ifelse(NA_Proportion <= 0.5, 1, 0))
+cmi <- cmi[dfnas2$Few_NAs == 1,]
+
+
+# Split into training and testing
+
+sample1 <- sample(c(1,0), size = nrow(cmi), replace = TRUE, prob = c(0.8, 0.2))
+train <- cmi[sample1 == 1,]
+test <- cmi[sample1 == 0,]
+```
+
+# KNN
+
+
+
+
+
+
+
+
