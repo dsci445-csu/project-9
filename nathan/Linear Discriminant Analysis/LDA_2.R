@@ -36,7 +36,22 @@ quantitative_vars_imputed = quantitative_vars %>%
 
 train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 
-quantitative_vars_imputed = quantitative_vars %>% mutate(sii = train_data$sii)
+quantitative_vars_imputed = quantitative_vars_imputed %>% mutate(sii = train_data$sii)
+# ---------------------------------------------------------------------------------------------------------------------- #
+# Removing collinear variables:
+
+# Compute correlation matrix for quantitative variables
+#correlation_matrix <- cor(quantitative_vars_imputed)
+
+# Find highly correlated pairs
+#high_corr_pairs <- findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE)
+
+# Remove highly correlated variables
+#quantitative_vars_filtered <- quantitative_vars_imputed[, -high_corr_pairs]
+# quantitative_vars_filtered %>% mutate(sii = train_data$sii)
+
+#train_data = bind_cols(categorical_vars, quantitative_vars_filtered)
+
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 # Linear Discriminant Analysis
@@ -45,6 +60,7 @@ lda_data_train = train_data
 lda_data_train$sii = as.factor(lda_data_train$sii)  # Ensure `sii` is a factor for LDA
 
 lda_data_train = subset(lda_data_train, select = -id)
+
 
 # Perform Linear Discriminant Analysis
 lda_model_train = lda(sii ~ ., data = lda_data_train)
@@ -74,7 +90,7 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 # Check if the number of linear discriminants is sufficient
 lda_discriminants = lda_predictions$x
 lda_discriminants = as.data.frame(lda_discriminants)
-lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
+#lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
 
 if (ncol(lda_discriminants) >= 2) {
   # Extract the first two linear discriminants
@@ -88,7 +104,7 @@ if (ncol(lda_discriminants) >= 2) {
          x = "Linear Discriminant 2",
          y = "Linear Discriminant 1") +
     theme_minimal() +
-    scale_color_manual(values = c("red", "blue", "green", "purple", "orange"))  # Adjust colors as needed
+    scale_color_manual(values = c("red", "blue", "green", "purple"))  # Adjust colors as needed
 } else {
   print("Insufficient linear discriminants for visualization.")
 }
