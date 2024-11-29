@@ -99,3 +99,145 @@ if (ncol(lda_discriminants) >= 2) {
 
 print(ldaplot)
 # ---------------------------------------------------------------------------------------------------------------------- #
+# Testing
+# Read the test dataset
+test = read_csv("test.csv")
+
+colnames(test) = gsub("-", "_", colnames(test))
+
+train_sii = subset(train_clean, select = c(id, sii))
+test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
+
+# Remove NA
+test_clean = test_clean[!is.na(test_clean$sii), ]
+
+test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
+#test_clean = test_clean[, !grepl("Season", names(test_clean))]
+
+# Separate categorical and quantitative variables
+# Select categorical variables (factor or character)
+categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x) | is.character(x))]
+
+# Select quantitative variables (numeric)
+quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
+
+# Combine quantitative and categorical variables before imputation
+test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
+
+# Perform kNN imputation (with k = 3)
+test_combined_imputed = kNN(test_combined, k = 3)
+
+# Add random noise to numeric columns to maintain variability
+test_combined_imputed = test_combined_imputed %>%
+  mutate(across(where(is.numeric), ~ . + rnorm(length(.), mean = 0, sd = 0.01)))  # Add small noise
+
+# Split back into quantitative variables (numeric) after imputation
+quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, is.numeric)]
+# Split back into categorical variables (factor or character) after imputation
+categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
+
+# Re-combine the imputed data
+# This is necessary because impuation method add logical variables into dataset
+test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
+test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
+
+lda_data_test = test_data
+lda_data_test$sii = as.factor(lda_data_test$sii)
+
+# Remove 'id' column or any non-predictor columns, if necessary
+lda_data_test = subset(lda_data_test, select = -id)
+
+# Perform Linear Discriminant Analysis
+lda_model_test = lda(sii ~ ., data = lda_data_test)
+
+print(lda_model_test)
+
+lda_predictions = predict(lda_model_test, lda_data_test)
+
+# Add predictions to the original data
+lda_data_test$predicted_sii = lda_predictions$class
+
+# Confusion matrix:
+confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
+
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+
+error_rate = 1 - accuracy
+print(paste("Error Rate:", round(error_rate * 100, 2), "%"))
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+# Testing
+# Read the test dataset
+test = read_csv("test.csv")
+
+colnames(test) = gsub("-", "_", colnames(test))
+
+train_sii = subset(train_clean, select = c(id, sii))
+test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
+
+test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
+test_clean = test_clean[, !grepl("Season", names(test_clean))]
+
+# Separate categorical and quantitative variables
+# Select categorical variables (factor or character)
+categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x) | is.character(x))]
+
+# Select quantitative variables (numeric)
+quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
+
+# Combine quantitative and categorical variables before imputation
+test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
+
+test_combined = test_combined[, !(names(test_combined) %in% c("PAQ_A_Season", "PAQ_A_PAQ_A_Total"))]
+
+# Perform kNN imputation (with k = 3)
+test_combined_imputed = kNN(test_combined, k = 3)
+
+# Add random noise to numeric columns to maintain variability
+test_combined_imputed = test_combined_imputed %>%
+  mutate(across(where(is.numeric), ~ . + rnorm(length(.), mean = 0, sd = 0.01)))  # Add small noise
+
+# Split back into quantitative variables (numeric) after imputation
+quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, is.numeric)]
+# Split back into categorical variables (factor or character) after imputation
+categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
+
+# Re-combine the imputed data
+# This is necessary because impuation method add logical variables into dataset
+test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
+test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
+
+lda_data_test = test_data
+lda_data_test$sii = as.factor(lda_data_test$sii)
+
+# Remove 'id' column or any non-predictor columns, if necessary
+lda_data_test = subset(lda_data_test, select = -id)
+
+# Perform Linear Discriminant Analysis
+lda_model_test = lda(sii ~ ., data = lda_data_test)
+
+print(lda_model_test)
+
+lda_predictions = predict(lda_model_test, lda_data_test)
+
+# Add predictions to the original data
+lda_data_test$predicted_sii = lda_predictions$class
+
+# Confusion matrix:
+confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
+
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+
