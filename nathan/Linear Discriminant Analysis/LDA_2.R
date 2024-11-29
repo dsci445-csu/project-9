@@ -1,27 +1,23 @@
 library(recipes)
-  library(readr)       
-    library(dplyr)       
-      library(caret)       
-        library(ggplot2)
-          library(parsnip)
-            library(purrr)
-              library(discrim)
-                library(tidyr)
-                  library(lda)
-                    library(VIM)
-                      library(MASS)
+library(readr)       
+library(dplyr)       
+library(caret)       
+library(ggplot2)
+library(parsnip)
+library(purrr)
+library(discrim)
+library(tidyr)
+library(lda)
+library(VIM)
+library(MASS)
 
 train = read_csv("train.csv")
 
-# ---------------------------------------------------------------------------------------------------------------------- #
-# Data Manipulation:
+train_clean = train[!is.na(train$sii), ]
+
 colnames(train) = gsub("-", "_", colnames(train)) # Replacing hyphens because R can't handle those
 train_clean = train[, !grepl("Season", names(train))]
 train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 levels (plus extra level for NAs later)
-
-
-train_clean$sii = factor(train_clean$sii, levels = c(levels(train_clean$sii), "Missing")) # Replacing NAs with new level
-train_clean$sii[is.na(train_clean$sii)] = "Missing"
 
 categorical_vars = train_clean[, sapply(train_clean, function(x) is.factor(x) | is.character(x))]
 # Select categorical variables including 'sii'
@@ -54,7 +50,7 @@ lda_data_train = subset(lda_data_train, select = -id)
 lda_model_train = lda(sii ~ ., data = lda_data_train)
 
 # View the LDA model output
-summary(lda_model_train)
+print(lda_model_train)
 
 # Predicting using the LDA model
 lda_predictions = predict(lda_model_train, lda_data_train)
@@ -78,7 +74,7 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 # Check if the number of linear discriminants is sufficient
 lda_discriminants = lda_predictions$x
 lda_discriminants = as.data.frame(lda_discriminants)
-#lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
+lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
 
 if (ncol(lda_discriminants) >= 2) {
   # Extract the first two linear discriminants
@@ -86,7 +82,7 @@ if (ncol(lda_discriminants) >= 2) {
   lda_data_train$LD2 = lda_discriminants[, 2]  # Second Linear Discriminant
   lda_data_train_new = lda_data_train %>% filter(LD1 < -8)
   # Plot the LDA results
-  ldaplot = ggplot(lda_data_train_new, aes(x = LD2, y = LD1, color = sii)) +
+  lda_plot = ggplot(lda_data_train_new, aes(x = LD2, y = LD1, color = sii)) +
     geom_point(alpha = 0.7) +
     labs(title = "LDA: Linear Discriminants 2 vs 1",
          x = "Linear Discriminant 2",
@@ -96,10 +92,10 @@ if (ncol(lda_discriminants) >= 2) {
 } else {
   print("Insufficient linear discriminants for visualization.")
 }
+print(lda_plot)
+# ggsave("lda_plot_noNA.png", plot = lda_plot, width = 8, height = 6, dpi = 300)
 
-print(ldaplot)
 # ---------------------------------------------------------------------------------------------------------------------- #
-# DON'T RUN THIS, IT TAKES A LONG TIME 
 
 get_errors_multiclass = function(model, y, tau) {
   posterior_probs = predict(model)$posterior
@@ -128,76 +124,6 @@ plot1 = ggplot(res_long) +
   labs(title = "Threshold vs Total Error Rate", x = "Threshold", y = "Error Rate") +
   theme_minimal()
 
+print(plot1)
 # Save the plot as a PNG file
 # ggsave("plot1.png", plot = plot1, width = 8, height = 6, dpi = 300)
-
-
-# ---------------------------------------------------------------------------------------------------------------------- #
-# Testing
-# Read the test dataset
-test = read_csv("test.csv")
-
-colnames(test) = gsub("-", "_", colnames(test))
-
-train_sii = subset(train_clean, select = c(id, sii))
-test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
-
-test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
-test_clean = test_clean[, !grepl("Season", names(test_clean))]
-
-# Separate categorical and quantitative variables
-# Select categorical variables (factor or character)
-categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x) | is.character(x))]
-
-# Select quantitative variables (numeric)
-quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
-
-# Combine quantitative and categorical variables before imputation
-test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
-
-# Perform kNN imputation (with k = 3)
-test_combined_imputed = kNN(test_combined, k = 3)
-
-# Add random noise to numeric columns to maintain variability
-test_combined_imputed = test_combined_imputed %>%
-  mutate(across(where(is.numeric), ~ . + rnorm(length(.), mean = 0, sd = 0.01)))  # Add small noise
-
-# Split back into quantitative variables (numeric) after imputation
-quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, is.numeric)]
-# Split back into categorical variables (factor or character) after imputation
-categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
-
-# Re-combine the imputed data
-# This is necessary because impuation method add logical variables into dataset
-test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
-test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
-
-lda_data_test = test_data
-lda_data_test$sii = as.factor(lda_data_test$sii)
-
-# Remove 'id' column or any non-predictor columns, if necessary
-lda_data_test = subset(lda_data_test, select = -id)
-
-# Perform Linear Discriminant Analysis
-lda_model_test = lda(sii ~ ., data = lda_data_test)
-
-print(lda_model_test)
-
-lda_predictions = predict(lda_model_test, lda_data_test)
-
-# Add predictions to the original data
-lda_data_test$predicted_sii = lda_predictions$class
-
-# Confusion matrix:
-confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
-
-print("Confusion Matrix:")
-print(confusion_matrix)
-
-# Calculate accuracy
-accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
-print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
-
-# PROBLEM: 100% accuracy?
-# ---------------------------------------------------------------------------------------------------------------------- #
-

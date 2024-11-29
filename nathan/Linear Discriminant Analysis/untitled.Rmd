@@ -1,0 +1,34 @@
+---
+title: "Untitled"
+author: "Nathan Seto"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r}
+library(recipes)
+  library(readr)       
+    library(dplyr)       
+      library(caret)       
+        library(ggplot2)
+          library(parsnip)
+            library(purrr)
+              library(discrim)
+                library(tidyr)
+                  library(lda)
+                    library(VIM)
+                      library(MASS)
+
+train = read_csv("train.csv")
+
+
+colnames(train) = 1:82
+
+x = (train[1:25,2:10]) %>% knitr::kable()
+```
+
+\newpage
+```{r}
+x
+```
+
