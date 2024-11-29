@@ -233,7 +233,7 @@ quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
 # Combine quantitative and categorical variables before imputation
 test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
 
-test_combined = test_combined %>% select(-PAQ_A_Season, -PAQ_A_PAQ_A_Total)
+test_combined = test_combined[, !(names(test_combined) %in% c("PAQ_A_Season", "PAQ_A_PAQ_A_Total"))]
 
 # Perform kNN imputation (with k = 3)
 test_combined_imputed = kNN(test_combined, k = 3)
@@ -258,7 +258,6 @@ lda_data_test$sii = as.factor(lda_data_test$sii)
 # Remove 'id' column or any non-predictor columns, if necessary
 lda_data_test = subset(lda_data_test, select = -id)
 
-library(MASS)
 # Perform Linear Discriminant Analysis
 lda_model_test = lda(sii ~ ., data = lda_data_test)
 
@@ -278,7 +277,6 @@ print(confusion_matrix)
 # Calculate accuracy
 accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
 print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
-detach("package:MASS", unload = TRUE)
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 
