@@ -54,7 +54,7 @@ lda_data_train = subset(lda_data_train, select = -id)
 lda_model_train = lda(sii ~ ., data = lda_data_train)
 
 # View the LDA model output
-print(lda_model)
+print(lda_model_train)
 
 # Predicting using the LDA model
 lda_predictions = predict(lda_model_train, lda_data_train)
@@ -200,31 +200,7 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 # PROBLEM: 100% accuracy?
 # ---------------------------------------------------------------------------------------------------------------------- #
 
-# For the train dataset (numerical variables only)
-train_variances = apply(train_clean[, sapply(train_clean, is.numeric)], 2, var)
 
-# For the test dataset (numerical variables only)
-test_variances = apply(test_clean[, sapply(test_clean, is.numeric)], 2, var)
 
-# View the variances
-print("Train Dataset Variances:")
-print(train_variances)
-
-print("Test Dataset Variances:")
-print(test_variances)
-# ---------------------------------------------------------------------------------------------------------------------- #
-
-# For the raw train dataset (numeric variables only)
-train_variances_raw = apply(train[, sapply(train, is.numeric)], 2, var)
-
-# For the raw test dataset (numeric variables only)
-test_variances_raw = apply(test[, sapply(test, is.numeric)], 2, var)
-
-# View the variances for the raw datasets
-print("Raw Train Dataset Variances (Numeric Variables Only):")
-print(train_variances_raw)
-
-print("Raw Test Dataset Variances (Numeric Variables Only):")
-print(test_variances_raw)
 
 
