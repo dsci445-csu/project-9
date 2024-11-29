@@ -149,7 +149,7 @@ colnames(test) = gsub("-", "_", colnames(test))
 train_sii = subset(train_clean, select = c(id, sii))
 test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
 
-test_clean = test_clean[!is.na(test_clean$sii), ]
+#test_clean = test_clean[!is.na(test_clean$sii), ]
 
 test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
 #test_clean = test_clean[, !grepl("Season", names(test_clean))]
@@ -250,7 +250,7 @@ categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imp
 # Re-combine the imputed data
 # This is necessary because impuation method add logical variables into dataset
 test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
-test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
+#test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
 
 lda_data_test = test_data
 lda_data_test$sii = as.factor(lda_data_test$sii)
