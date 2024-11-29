@@ -99,37 +99,3 @@ if (ncol(lda_discriminants) >= 2) {
 
 print(ldaplot)
 # ---------------------------------------------------------------------------------------------------------------------- #
-# DON'T RUN THIS, IT TAKES A LONG TIME 
-
-get_errors_multiclass = function(model, y, tau) {
-  posterior_probs = predict(model)$posterior
-  
-  predicted_class = apply(posterior_probs, 1, function(row) which.max(row) - 1)  # Convert probabilities to class indices
-  
-  conf = table(predicted_class, y)
-  
-  error_tot = sum(diag(conf)) / sum(conf)  # Total accuracy
-  total_error = 1 - error_tot  # Total error rate
-  
-  return(data.frame(total_error = total_error))
-}
-
-res = data.frame()
-
-for(tau in seq(0.0001, 0.5, by = 0.0001)) {
-  res = rbind(res, data.frame(threshold = tau, get_errors_multiclass(lda_model_train, lda_data_train$sii, tau)))
-}
-
-res_long = res %>%
-  gather(error, value, -threshold)
-
-plot1 = ggplot(res_long) +
-  geom_line(aes(x = threshold, y = value, colour = error)) +
-  labs(title = "Threshold vs Total Error Rate", x = "Threshold", y = "Error Rate") +
-  theme_minimal()
-
-# Save the plot as a PNG file
-# ggsave("plot1.png", plot = plot1, width = 8, height = 6, dpi = 300)
-
-
-# ---------------------------------------------------------------------------------------------------------------------- #
