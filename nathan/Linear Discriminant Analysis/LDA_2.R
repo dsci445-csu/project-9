@@ -16,7 +16,7 @@ train = read_csv("train.csv")
 train_clean = train[!is.na(train$sii), ]
 
 colnames(train) = gsub("-", "_", colnames(train)) # Replacing hyphens because R can't handle those
-train_clean = train[, !grepl("Season", names(train))]
+train_clean = train_clean[, !grepl("Season", names(train))]
 train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 levels (plus extra level for NAs later)
 
 categorical_vars = train_clean[, sapply(train_clean, function(x) is.factor(x) | is.character(x))]
@@ -34,24 +34,23 @@ quantitative_vars = train_clean[, sapply(train_clean, is.numeric)]
 quantitative_vars_imputed = quantitative_vars %>%
   mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
 
-train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
+#train_data = bind_cols(categorical_vars, quantitative_vars_imputed)
 
-quantitative_vars_imputed = quantitative_vars_imputed %>% mutate(sii = train_data$sii)
 # ---------------------------------------------------------------------------------------------------------------------- #
 # Removing collinear variables:
 
 # Compute correlation matrix for quantitative variables
-#correlation_matrix <- cor(quantitative_vars_imputed)
+correlation_matrix = cor(quantitative_vars_imputed)
 
 # Find highly correlated pairs
-#high_corr_pairs <- findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE)
+high_corr_pairs = findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE)
 
 # Remove highly correlated variables
-#quantitative_vars_filtered <- quantitative_vars_imputed[, -high_corr_pairs]
-# quantitative_vars_filtered %>% mutate(sii = train_data$sii)
+quantitative_vars_filtered = quantitative_vars_imputed[, -high_corr_pairs]
 
-#train_data = bind_cols(categorical_vars, quantitative_vars_filtered)
+train_data = bind_cols(categorical_vars, quantitative_vars_filtered)
 
+quantitative_vars_filtered = quantitative_vars_filtered %>% mutate(sii = train_data$sii)
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 # Linear Discriminant Analysis
@@ -84,6 +83,9 @@ print(confusion_matrix)
 accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
 print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 
+error_rate = 1 - accuracy
+print(paste("Error Rate:", round(error_rate * 100, 2), "%"))
+
 # ---------------------------------------------------------------------------------------------------------------------- #
 # LDA Visualization
 
@@ -113,33 +115,171 @@ print(lda_plot)
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 
-get_errors_multiclass = function(model, y, tau) {
-  posterior_probs = predict(model)$posterior
+# get_errors_multiclass = function(model, y, tau) { posterior_probs = predict(model)$posterior
   
-  predicted_class = apply(posterior_probs, 1, function(row) which.max(row) - 1)  # Convert probabilities to class indices
+#  predicted_class = apply(posterior_probs, 1, function(row) which.max(row) - 1)  # Convert probabilities to class indices
   
-  conf = table(predicted_class, y)
+#  conf = table(predicted_class, y)
   
-  error_tot = sum(diag(conf)) / sum(conf)  # Total accuracy
-  total_error = 1 - error_tot  # Total error rate
+#  error_tot = sum(diag(conf)) / sum(conf)  # Total accuracy
+#  total_error = 1 - error_tot  # Total error rate
   
-  return(data.frame(total_error = total_error))
-}
+#  return(data.frame(total_error = total_error))
+#}
 
-res = data.frame()
+#res = data.frame()
 
-for(tau in seq(0.0001, 0.5, by = 0.0001)) {
-  res = rbind(res, data.frame(threshold = tau, get_errors_multiclass(lda_model_train, lda_data_train$sii, tau)))
-}
+#for(tau in seq(0.0001, 0.5, by = 0.0001)) {   res = rbind(res, data.frame(threshold = tau, get_errors_multiclass(lda_model_train, lda_data_train$sii, tau))) }
 
-res_long = res %>%
-  gather(error, value, -threshold)
+#res_long = res %>%
+#  gather(error, value, -threshold)
 
-plot1 = ggplot(res_long) +
-  geom_line(aes(x = threshold, y = value, colour = error)) +
-  labs(title = "Threshold vs Total Error Rate", x = "Threshold", y = "Error Rate") +
-  theme_minimal()
+#plot1 = ggplot(res_long) + geom_line(aes(x = threshold, y = value, colour = error)) + labs(title = "Threshold vs Total Error Rate", x = "Threshold", y = "Error Rate") + theme_minimal()
 
-print(plot1)
+# print(plot1)
 # Save the plot as a PNG file
 # ggsave("plot1.png", plot = plot1, width = 8, height = 6, dpi = 300)
+# ---------------------------------------------------------------------------------------------------------------------- #
+# Testing
+# Read the test dataset
+test = read_csv("test.csv")
+
+colnames(test) = gsub("-", "_", colnames(test))
+
+train_sii = subset(train_clean, select = c(id, sii))
+test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
+
+test_clean = test_clean[!is.na(test_clean$sii), ]
+
+test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
+#test_clean = test_clean[, !grepl("Season", names(test_clean))]
+
+# Separate categorical and quantitative variables
+# Select categorical variables (factor or character)
+categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x) | is.character(x))]
+
+# Select quantitative variables (numeric)
+quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
+
+# Combine quantitative and categorical variables before imputation
+test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
+
+# Perform kNN imputation (with k = 3)
+test_combined_imputed = kNN(test_combined, k = 3)
+
+# Add random noise to numeric columns to maintain variability
+test_combined_imputed = test_combined_imputed %>%
+  mutate(across(where(is.numeric), ~ . + rnorm(length(.), mean = 0, sd = 0.01)))  # Add small noise
+
+# Split back into quantitative variables (numeric) after imputation
+quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, is.numeric)]
+# Split back into categorical variables (factor or character) after imputation
+categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
+
+# Re-combine the imputed data
+# This is necessary because impuation method add logical variables into dataset
+test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
+test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
+
+lda_data_test = test_data
+lda_data_test$sii = as.factor(lda_data_test$sii)
+
+# Remove 'id' column or any non-predictor columns, if necessary
+lda_data_test = subset(lda_data_test, select = -id)
+
+# Perform Linear Discriminant Analysis
+lda_model_test = lda(sii ~ ., data = lda_data_test)
+
+print(lda_model_test)
+
+lda_predictions = predict(lda_model_test, lda_data_test)
+
+# Add predictions to the original data
+lda_data_test$predicted_sii = lda_predictions$class
+
+# Confusion matrix:
+confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
+
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+
+error_rate = 1 - accuracy
+print(paste("Error Rate:", round(error_rate * 100, 2), "%"))
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+# Testing
+# Read the test dataset
+test = read_csv("test.csv")
+
+colnames(test) = gsub("-", "_", colnames(test))
+
+train_sii = subset(train_clean, select = c(id, sii))
+test_clean = test %>% left_join(train_sii, by = "id", suffix = c("", "_train"))
+
+test_clean$sii = factor(test_clean$sii, levels = levels(train_clean$sii))
+test_clean = test_clean[, !grepl("Season", names(test_clean))]
+
+# Separate categorical and quantitative variables
+# Select categorical variables (factor or character)
+categorical_vars_test = test_clean[, sapply(test_clean, function(x) is.factor(x) | is.character(x))]
+
+# Select quantitative variables (numeric)
+quantitative_vars_test = test_clean[, sapply(test_clean, is.numeric)]
+
+# Combine quantitative and categorical variables before imputation
+test_combined = bind_cols(categorical_vars_test, quantitative_vars_test)
+
+test_combined = test_combined %>% select(-PAQ_A_Season, -PAQ_A_PAQ_A_Total)
+
+# Perform kNN imputation (with k = 3)
+test_combined_imputed = kNN(test_combined, k = 3)
+
+# Add random noise to numeric columns to maintain variability
+test_combined_imputed = test_combined_imputed %>%
+  mutate(across(where(is.numeric), ~ . + rnorm(length(.), mean = 0, sd = 0.01)))  # Add small noise
+
+# Split back into quantitative variables (numeric) after imputation
+quantitative_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, is.numeric)]
+# Split back into categorical variables (factor or character) after imputation
+categorical_vars_test_imputed = test_combined_imputed[, sapply(test_combined_imputed, function(x) is.character(x) | is.factor(x))]
+
+# Re-combine the imputed data
+# This is necessary because impuation method add logical variables into dataset
+test_data = bind_cols(categorical_vars_test_imputed, quantitative_vars_test_imputed)
+test_data$sii = test_clean$sii  # Add 'sii' to the dataset (raw column)
+
+lda_data_test = test_data
+lda_data_test$sii = as.factor(lda_data_test$sii)
+
+# Remove 'id' column or any non-predictor columns, if necessary
+lda_data_test = subset(lda_data_test, select = -id)
+
+library(MASS)
+# Perform Linear Discriminant Analysis
+lda_model_test = lda(sii ~ ., data = lda_data_test)
+
+print(lda_model_test)
+
+lda_predictions = predict(lda_model_test, lda_data_test)
+
+# Add predictions to the original data
+lda_data_test$predicted_sii = lda_predictions$class
+
+# Confusion matrix:
+confusion_matrix = table(lda_data_test$sii, lda_data_test$predicted_sii)
+
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy = sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+detach("package:MASS", unload = TRUE)
+
+# ---------------------------------------------------------------------------------------------------------------------- #
+
+
