@@ -75,7 +75,7 @@ predictions = predict(svm_fit_tidy, new_data = test_data)
 output = data.frame(id = test$id, sii = predictions)
 output = output %>% rename(sii = .pred_class)
 output = output %>% mutate(sii = na_if(sii, "Missing"))
-write_csv(output, "submission.csv")
+#write_csv(output, "submission.csv")
 
 
 
@@ -107,4 +107,6 @@ plot1 = ggplot() +
 
 print(plot1)
 
-ggsave("svm_plot.png", plot = plot1, width = 10, height = 8, dpi = 300)
+#ggsave("svm_plot.png", plot = plot1, width = 10, height = 8, dpi = 300)
+
+
