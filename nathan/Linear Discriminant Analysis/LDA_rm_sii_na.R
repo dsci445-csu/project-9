@@ -10,7 +10,7 @@ library(tidyr)
 library(lda)
 library(VIM)
 library(MASS)
-
+set.seed(445)
 train = read_csv("train.csv")
 
 train_clean = train[!is.na(train$sii), ]
