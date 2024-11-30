@@ -92,15 +92,13 @@ print(paste("Error Rate:", round(error_rate * 100, 2), "%"))
 # Check if the number of linear discriminants is sufficient
 lda_discriminants = lda_predictions$x
 lda_discriminants = as.data.frame(lda_discriminants)
-#lda_discriminants = lda_discriminants %>% filter(LD1 < 38)
 
 if (ncol(lda_discriminants) >= 2) {
   # Extract the first two linear discriminants
   lda_data_train$LD1 = lda_discriminants[, 1]  # First Linear Discriminant
   lda_data_train$LD2 = lda_discriminants[, 2]  # Second Linear Discriminant
-  lda_data_train_new = lda_data_train %>% filter(LD1 < -8)
   # Plot the LDA results
-  lda_plot = ggplot(lda_data_train_new, aes(x = LD2, y = LD1, color = sii)) +
+  lda_plot_naRm = ggplot(lda_data_train, aes(x = LD2, y = LD1, color = sii)) +
     geom_point(alpha = 0.7) +
     labs(title = "LDA: Linear Discriminants 2 vs 1",
          x = "Linear Discriminant 2",
@@ -110,8 +108,9 @@ if (ncol(lda_discriminants) >= 2) {
 } else {
   print("Insufficient linear discriminants for visualization.")
 }
-print(lda_plot)
-# ggsave("lda_plot_noNA.png", plot = lda_plot, width = 8, height = 6, dpi = 300)
+
+print(lda_plot_naRm)
+#ggsave("lda_plot_naRm", plot = lda_plot_naRm, width = 8, height = 6, dpi = 300)
 
 # ---------------------------------------------------------------------------------------------------------------------- #
 
