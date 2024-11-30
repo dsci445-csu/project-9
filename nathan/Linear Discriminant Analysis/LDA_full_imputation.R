@@ -167,3 +167,22 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 
 # PROBLEM: 100% accuracy?
 # ---------------------------------------------------------------------------------------------------------------------- #
+# Another Way: Tidymodels:
+
+test_columns = colnames(lda_data_test)
+train_columns = colnames(lda_data_train)
+
+# Keep only the columns in lda_data_train that are also in lda_data_test
+lda_data_train = lda_data_train[, train_columns %in% test_columns]
+
+# View the updated lda_data_train
+head(lda_data_train)
+
+
+lda_spec = discrim_linear(engine = "MASS")
+lda_fit = lda_spec |> fit(sii ~ ., data = lda_data_train)
+lda_fit |> pluck("fit")
+
+
+
+lda_fit |> augment(new_data = lda_data_test) |> conf_mat(truth = sii, estimate = .pred_class)
