@@ -316,7 +316,7 @@ if (ncol(lda_discriminants) >= 2) {
   lda_data_train$LD1 = lda_discriminants[, 1]  # First Linear Discriminant
   lda_data_train$LD2 = lda_discriminants[, 2]  # Second Linear Discriminant
   # Plot the LDA results
-  lda_plot_naRm = ggplot(lda_data_train, aes(x = LD2, y = LD1, color = sii)) +
+  lda_plot_naRm = ggplot(lda_data_train, aes(x = LD1, y = LD2, color = sii)) +
     geom_point(alpha = 0.7) +
     labs(title = "LDA: Linear Discriminants 2 vs 1",
          x = "Linear Discriminant 2",
