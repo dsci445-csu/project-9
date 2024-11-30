@@ -106,7 +106,8 @@ plot1 = ggplot() +
   theme_minimal()
 
 print(plot1)
+# ----------------------------------------- #
 
-#ggsave("svm_plot.png", plot = plot1, width = 10, height = 8, dpi = 300)
+
 
 
