@@ -1,7 +1,7 @@
 ---
 output:
   pdf_document: default
-  html_document: default
+  github_document: default
 ---
 
 # Load Packages
@@ -11,6 +11,8 @@ suppressWarnings({
 library(class)
 library(dplyr)
 library(kableExtra)
+library(tidyr)
+library(mice)
 })
 })
 ```
@@ -20,7 +22,9 @@ library(kableExtra)
 set.seed(445)
 cmi <- read.csv("train.csv")
 notimportant <- c("CGAS.Season", "Physical.Season", "Fitness_Endurance.Season",
-                  "FGC.Season", "BIA.Season", "Basic_Demos.Enroll_Season")
+                  "FGC.Season", "BIA.Season", "Basic_Demos.Enroll_Season",
+                  "PAQ_A.Season", "PAQ_C.Season", "PCIAT.Season",
+                  "SDS.Season", "PreInt_EduHx.Season")
 
 
 # Find out how many NAs each variable has
@@ -45,7 +49,7 @@ suppressWarnings(cmi <- select(cmi, -removevars))
 
 dfnas2 <- data.frame(cmi$id, rep(0, times = nrow(cmi)))
 for(i in 1:nrow(cmi)){
-  dfnas2[i,2] <- sum(is.na(cmi[i,c(2:66)]))
+  dfnas2[i,2] <- sum(is.na(cmi[i,c(2:61)]))
 }
 colnames(dfnas2) <- c("ID", "Total_NAs")
 dfnas2 <- mutate(dfnas2, "NA_Proportion" = round(Total_NAs/ncol(cmi),3))
@@ -67,7 +71,95 @@ train <- cmi[sample1 == 1,]
 test <- cmi[sample1 == 0,]
 ```
 
-# KNN
+## Trying Out Some Imputing
+```{r echo=TRUE, results='hide'}
+# Take care of remaining NAs (imputing)
+
+train_imp <- complete(mice(train, method = "cart"))
+test_imp <- complete(mice(test, method = "cart"))
+
+
+# Some still have a bunch of NAs
+
+train_imp <- dplyr::filter(train_imp, BIA.BIA_FFM >= 0)
+test_imp <- dplyr::filter(test_imp, BIA.BIA_FFM >= 0)
+```
+
+
+# Linear Regression
+
+## Load More Packages
+```{r}
+suppressMessages({
+suppressWarnings({
+library(glmnet)
+library(ggplot2)
+})
+})
+```
+
+## Quick EDA
+```{r}
+ggplot(data = cmi, aes(x = sii)) + 
+  geom_histogram(bins = 4, color = "#039be5", fill = "white") + 
+  labs(title = "Number of People in Each group", x = "SII Score", y = "Count")
+ggplot(data = train_imp, aes(group = sii, y = SDS.SDS_Total_Raw, x = sii)) +
+  geom_boxplot(color = "#039be5") + 
+  labs(title = "SDS Score Distribution for Each SII Score", x = "SII Score",
+       y = "SDS Scores")
+```
+
+## Let's Do This
+```{r}
+set.seed(445)
+lasso_mod <- cv.glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                       y = train_imp[,58], alpha = 1)
+best_lambda_lasso <- lasso_mod$lambda.min
+best_lasso <- glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                     y = train_imp[,58], 
+                     alpha = 1, lambda = best_lambda_lasso)
+lasso_error <- test_imp$SDS.SDS_Total_Raw - 
+  predict(best_lasso, s = best_lambda_lasso, 
+          newx = as.matrix(test_imp[,c(2:57,60:61)]))
+lasso_mse <- mean(lasso_error^2)
+cat("RMSE for LASSO Regression:", sqrt(lasso_mse), "\n")
+best_lasso$beta
+
+lasso_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
+                       predict(best_lasso, s = best_lambda_lasso, 
+                               newx = as.matrix(test_imp[,c(2:57,60:61)])))
+colnames(lasso_df) <- c("Actual", "Predicted")
+ggplot(data = lasso_df, aes(x = Predicted, y = Actual)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "#039be5", size = 1) + 
+  labs(title = "Actual SDS Score vs Predicted SDS Score", subtitle = "LASSO",
+       x = "Predicted SDS Score", y = "Actual SDS Score")
+```
+
+## Let's Do This Part 2
+```{r}
+set.seed(445)
+ridge_mod <- cv.glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                       y = train_imp[,58], alpha = 0)
+best_lambda_ridge <- ridge_mod$lambda.min
+best_ridge <- glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                     y = train_imp[,58], 
+                     alpha = 0, lambda = best_lambda_ridge)
+ridge_error <- test_imp$SDS.SDS_Total_Raw - 
+  predict(best_ridge, s = best_lambda_ridge, 
+          newx = as.matrix(test_imp[,c(2:57,60:61)]))
+ridge_mse <- mean(ridge_error^2)
+cat("RMSE for Ridge Regression:", sqrt(ridge_mse), "\n")
+best_lasso$beta
+
+ridge_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
+                       predict(best_ridge, s = best_lambda_ridge, 
+                               newx = as.matrix(test_imp[,c(2:57,60:61)])))
+colnames(ridge_df) <- c("Actual", "Predicted")
+ggplot(data = ridge_df, aes(x = Predicted, y = Actual)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "#039be5", size = 1) + 
+  labs(title = "Actual SDS Score vs Predicted SDS Score", subtitle = "Ridge",
+       x = "Predicted SDS Score", y = "Actual SDS Score")
+```
 
 
 
