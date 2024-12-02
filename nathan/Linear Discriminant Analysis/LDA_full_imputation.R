@@ -168,7 +168,7 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 # PROBLEM: 100% accuracy?
 # ---------------------------------------------------------------------------------------------------------------------- #
 # Another Way: Tidymodels:
-
+library(yardstick)
 test_columns = colnames(lda_data_test)
 train_columns = colnames(lda_data_train)
 
