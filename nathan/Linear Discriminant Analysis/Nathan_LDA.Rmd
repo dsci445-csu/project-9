@@ -83,7 +83,7 @@ print(paste("Train Error Rate:", round(error_rate_train * 100, 2), "%"))
 
 ## Visualization
 ```{r, warning = FALSE, message = FALSE}
-lda_discriminants = lda_predictions$x
+lda_discriminants = lda_predictions_train$x
 lda_discriminants = as.data.frame(lda_discriminants)
 
 if (ncol(lda_discriminants) >= 2) {
