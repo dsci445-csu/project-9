@@ -18,6 +18,7 @@ library(tidyr)
 library(lda)
 library(VIM)
 library(MASS)
+library(pander)
 ```
 
 ## Loading Data
@@ -31,6 +32,7 @@ colnames(train) = gsub("-", "_", colnames(train))
 train_clean = train_clean[, !grepl("Season", names(train))]
 train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 levels (plus extra level for NAs later)
 
+# Imputation
 categorical_vars = train_clean[, sapply(train_clean, function(x) is.factor(x) | is.character(x))]
 pciat_columns = grep("PCIAT", names(train_clean), value = TRUE)
 pciat_columns = pciat_columns[pciat_columns != "PCIAT_PCIAT_Total"]
@@ -44,6 +46,7 @@ quantitative_vars = train_clean[, sapply(train_clean, is.numeric)]
 quantitative_vars_imputed = quantitative_vars %>%
   mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
 
+# Accounting for collinearity
 correlation_matrix = cor(quantitative_vars_imputed)
   high_corr_pairs = findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE)
     quantitative_vars_filtered = quantitative_vars_imputed[, -high_corr_pairs]
@@ -72,7 +75,7 @@ lda_predictions_train = predict(lda_model_train, lda_data_train)
 
 confusion_matrix_train = table(lda_data_train$sii, lda_data_train$predicted_sii)
 print("Train Confusion Matrix:")
-print(confusion_matrix_train)
+print(pander(confusion_matrix_train))
 
 accuracy_train = sum(diag(confusion_matrix_train)) / sum(confusion_matrix_train)
 print(paste("Train Accuracy:", round(accuracy_train * 100, 2), "%"))
@@ -110,12 +113,14 @@ lda_data_test = test_set
 
 lda_model_test = lda(sii ~ ., data = lda_data_test)
 
+# Make prediction
 lda_predictions_test = predict(lda_model_test, lda_data_test)
   lda_data_test$predicted_sii = lda_predictions_test$class
 
+# Confusion Matrix
 confusion_matrix_test = table(lda_data_test$sii, lda_data_test$predicted_sii)
 print("Test Confusion Matrix:")
-print(confusion_matrix_test)
+print(pander(confusion_matrix_test))
 
 accuracy_test = sum(diag(confusion_matrix_test)) / sum(confusion_matrix_test)
 print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
