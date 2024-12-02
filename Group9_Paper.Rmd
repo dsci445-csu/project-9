@@ -1,0 +1,45 @@
+---
+title: "Predicting Problematic Internet Usage"
+author: "Kwan Eum, Eddie Haggerty, Nathan Seto"
+output: pdf_document
+---
+
+# Introduction
+
+This project stems from the Kaggle Competition, “Problematic Internet Use”  by the Child Mind Institute. The goal is to predict the level of each participant’s Severity Impairment Index (SII) score, which is a measure of problematic internet use by children and adolescents. Most predictor variables have to do with the participants’ physical activity and online habits. We also wanted to see if we could predict the Sleep Disturbance Scale (SDS) score, which measures quality of sleep and is used in diagnosing certain conditions. We built multiple machine learning models with these goals in mind. 
+$\\$
+
+# Methods
+
+## Handling NA Values
+
+The data set that we were given for the competition had a lot of NA values. We tried a couple different methods for dealing with the NA values in our data set. For our linear regression approach, there were a few steps in our process. First, we removed the variables that had more than 50% NA values. There were only 10 variables that fit this description, but they all had a large proportion of NA values and we felt it would be best if we excluded those variables. Then, we removed all observations that had more than 50% NA values. There were 1097 variables removed this way, with a surprising large number of those observations having more than 90% NA values. Finally, we used imputation to fill in the remaining NA values.
+$\\$
+For the other methods, we tried removing observations with a missing value for SII score and imputing the rest of the NA values. We are interested to see which of these methods gives us better results. 
+$\\$
+
+## Linear Regression
+
+Since the SII score for the participants is a categorical variable, we couldn’t use linear regression to predict SII score. While SDS score is confined to only integers, it’s not a categorical variable, so we can use linear regression to make predictions on that variable.
+$\\$
+The first linear regression method we used was Lasso regression. Lasso regression suggested that we only use 28 variables to predict SDS score. It was interesting to see that only 2 of the 17 Bioelectric Impedance Analysis (BIA) variables were used. BIA measures things like body mass index, fat free mass, extracellular water, lean dry mass and other things of that nature. The only two BIA variables that were used in this model were Body Mass Index and Activity Level. After using cross validation to find the best value for λ, our best Lasso model ended up with a Test RMSE of 10.73954.
+$\\$
+The other linear regression method we used was Ridge regression. Ridge is very similar to Lasso, but does have a slightly different variable selection process that can result in a different “best model” than Lasso. In this case, the exact same predictors were used in both models, just with different coefficients associated with those predictors. After using cross validation again to find the best value for λ, our best Ridge model ended up with a Test RMSE of 10.6742.
+$\\$
+
+## Random Forest
+
+
+## Linear Discriminant Analysis
+
+Linear Discriminant Analysis (LDA) is a classification method that assumes the predictors for each class follow a multivariate Gaussian distribution with class-specific means and a shared covariance matrix. It estimates the posterior probabilities P(Y=k ∣ X=x) using Bayes’ theorem and assigns observations to the class with the highest posterior. LDA’s decision boundaries are linear functions of the predictors, making it effective in separating classes under the Gaussian assumption.
+$\\$
+Prior to fitting the LDA model, we removed collinear variables from the data. We fit a model using 80 percent of the data as the training set and used the remaining 20 percent as the test set to predict what level SII might be classified as. We then created a confusion matrix for the training and testing sets.
+$\\$
+
+# Results
+
+
+# Discussion
+
+
