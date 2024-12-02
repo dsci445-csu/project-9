@@ -73,7 +73,7 @@ lda_model_train = lda(sii ~ ., data = lda_data_train)
 print(lda_model_train)
 
 # Predicting using the LDA model
-lda_predictions_train = predict(lda_model_train, lda_data_train)
+lda_predictions = predict(lda_model_train, lda_data_train)
 
 # Add predictions to the original data
 lda_data_train$predicted_sii = lda_predictions_train$class
@@ -121,3 +121,25 @@ print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
 
 error_rate_test = 1 - accuracy_test
 print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
+
+
+
+
+lda_discriminants = lda_predictions$x
+lda_discriminants = as.data.frame(lda_discriminants)
+
+if (ncol(lda_discriminants) >= 2) {
+  # Extract the first two linear discriminants
+  lda_data_train$LD1 = lda_discriminants[, 1]  # First Linear Discriminant
+  lda_data_train$LD2 = lda_discriminants[, 2]  # Second Linear Discriminant
+  # Plot the LDA results
+  ggplot(lda_data_train, aes(x = LD1, y = LD2, color = sii)) +
+    geom_point(alpha = 0.7) +
+    labs(title = "LDA: Linear Discriminants 1 vs 2",
+         x = "Linear Discriminant 2",
+         y = "Linear Discriminant 1") +
+    theme_minimal() +
+    scale_color_manual(values = c("red", "blue", "green", "purple"))  
+} else {
+  print("Insufficient linear discriminants for visualization.")
+}
