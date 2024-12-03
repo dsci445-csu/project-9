@@ -123,7 +123,7 @@ lasso_error <- test_imp$SDS.SDS_Total_Raw -
           newx = as.matrix(test_imp[,c(2:57,60:61)]))
 lasso_mse <- mean(lasso_error^2)
 cat("RMSE for LASSO Regression:", sqrt(lasso_mse), "\n")
-best_lasso$beta
+#best_lasso$beta
 
 lasso_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
                        predict(best_lasso, s = best_lambda_lasso, 
@@ -145,7 +145,7 @@ ridge_error <- test_imp$SDS.SDS_Total_Raw -
           newx = as.matrix(test_imp[,c(2:57,60:61)]))
 ridge_mse <- mean(ridge_error^2)
 cat("RMSE for Ridge Regression:", sqrt(ridge_mse), "\n")
-best_lasso$beta
+#best_lasso$beta
 
 ridge_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
                        predict(best_ridge, s = best_lambda_ridge, 
