@@ -9,4 +9,4 @@ https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-us
 - To replicate Linear Discriminant Analysis, see 'Nathan_LDA.Rmd'.
 
 - To view the group presentation, see 'Group9_Presentation.pptx'.
-- To view the project report, see 'Group9_Paper.pdf'.
+- To view the project report, see 'Group9_Report.pdf'.
