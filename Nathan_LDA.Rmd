@@ -18,7 +18,6 @@ library(tidyr)
 library(lda)
 library(VIM)
 library(MASS)
-library(pander)
 ```
 
 ## Loading Data
@@ -75,7 +74,7 @@ lda_predictions_train = predict(lda_model_train, lda_data_train)
 
 confusion_matrix_train = table(lda_data_train$sii, lda_data_train$predicted_sii)
 print("Train Confusion Matrix:")
-print(pander(confusion_matrix_train))
+print(kable(confusion_matrix_train))
 
 accuracy_train = sum(diag(confusion_matrix_train)) / sum(confusion_matrix_train)
 print(paste("Train Accuracy:", round(accuracy_train * 100, 2), "%"))
@@ -120,7 +119,7 @@ lda_predictions_test = predict(lda_model_test, lda_data_test)
 # Confusion Matrix
 confusion_matrix_test = table(lda_data_test$sii, lda_data_test$predicted_sii)
 print("Test Confusion Matrix:")
-pander(confusion_matrix_test)
+kable(confusion_matrix_test)
 
 accuracy_test = sum(diag(confusion_matrix_test)) / sum(confusion_matrix_test)
 print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
