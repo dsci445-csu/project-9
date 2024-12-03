@@ -35,8 +35,6 @@ This project stems from the Kaggle Competition, “Problematic Internet Use”  
 ## Handling NA Values
 
 The data set that we were given for the competition had a lot of NA values. We tried a couple different methods for dealing with the NA values in our data set. For our linear regression approach, there were a few steps in our process. First, we removed the variables that had more than 50 percent NA values. There were only 10 variables that fit this description, but they all had a large proportion of NA values and we felt it would be best if we excluded those variables. Then, we removed all observations that had more than 50 percent NA values. There were 1097 variables removed this way, with a surprising large number of those observations having more than 90 percent NA values. Finally, we used imputation to fill in the remaining NA values.
-
-
 ```{r, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
 
 set.seed(445)
@@ -82,18 +80,10 @@ toomanynas2 <- filter(dfnas2, NA_Proportion > 0.5)$ID
 kable(head(arrange(dfnas2, desc(NA_Proportion)),10))
 dfnas2 <- mutate(dfnas2, "Few_NAs" = ifelse(NA_Proportion <= 0.5, 1, 0))
 cmi <- cmi[dfnas2$Few_NAs == 1,]
-
-
-# Split into training and testing
-
-sample1 <- sample(c(1,0), size = nrow(cmi), replace = TRUE, prob = c(0.8, 0.2))
-train <- cmi[sample1 == 1,]
-test <- cmi[sample1 == 0,]
 ```
 
 
 For the other methods, we tried removing observations with a missing value for `SII` score and imputing the rest of the NA values. We are interested to see which of these methods gives us better results. 
-
 
 
 ## Linear Regression
@@ -101,17 +91,164 @@ For the other methods, we tried removing observations with a missing value for `
 Since the `SII` score for the participants is a categorical variable, we couldn’t use linear regression to predict `SII` score. While `SDS` score is confined to only integers, it’s not a categorical variable, so we can use linear regression to make predictions on that variable.
 
 
-The first linear regression method we used was Lasso regression. Lasso regression suggested that we only use 28 variables to predict `SDS` score. It was interesting to see that only 2 of the 17 Bioelectric Impedance Analysis (BIA) variables were used. BIA measures things like body mass index, fat free mass, extracellular water, lean dry mass and other things of that nature. The only two BIA variables that were used in this model were Body Mass Index and Activity Level. After using cross validation to find the best value for $\lambda$, our best Lasso model ended up with a Test RMSE of 10.73954.
+The first linear regression method we used was Lasso regression. Lasso regression suggested that we only use 28 variables to predict `SDS` score. It was interesting to see that only 2 of the 17 Bioelectric Impedance Analysis (BIA) variables were used. BIA measures things like body mass index, fat free mass, extracellular water, lean dry mass and other things of that nature. The only two BIA variables that were used in this model were Body Mass Index and Activity Level. After using cross validation to find the best value for $\lambda$, our best Lasso model ended up with a Test root mean squared error (RMSE) of 10.73954.
 
 
 The other linear regression method we used was Ridge regression. Ridge is very similar to Lasso, but does have a slightly different variable selection process that can result in a different “best model” than Lasso. In this case, the exact same predictors were used in both models, just with different coefficients associated with those predictors. After using cross validation again to find the best value for $\lambda$, our best Ridge model ended up with a Test RMSE of 10.6742.
+```{r, echo = FALSE, eval = TRUE, message=FALSE, warning = FALSE}
+# Split into training and testing
+
+sample1 <- sample(c(1,0), size = nrow(cmi), replace = TRUE, prob = c(0.8, 0.2))
+train <- cmi[sample1 == 1,]
+test <- cmi[sample1 == 0,]
+
+
+train_imp <- complete(mice(train, method = "cart"))
+test_imp <- complete(mice(test, method = "cart"))
+
+
+# Some still have a bunch of NAs
+
+train_imp <- filter(train_imp, BIA.BIA_FFM >= 0)
+test_imp <- filter(test_imp, BIA.BIA_FFM >= 0)
+
+lasso_mod <- cv.glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                       y = train_imp[,58], alpha = 1)
+best_lambda_lasso <- lasso_mod$lambda.min
+best_lasso <- glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                     y = train_imp[,58], 
+                     alpha = 1, lambda = best_lambda_lasso)
+lasso_error <- test_imp$SDS.SDS_Total_Raw - 
+  predict(best_lasso, s = best_lambda_lasso, 
+          newx = as.matrix(test_imp[,c(2:57,60:61)]))
+lasso_mse <- mean(lasso_error^2)
+cat("RMSE for LASSO Regression:", sqrt(lasso_mse), "\n")
+best_lasso$beta
+
+lasso_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
+                       predict(best_lasso, s = best_lambda_lasso, 
+                               newx = as.matrix(test_imp[,c(2:57,60:61)])))
+colnames(lasso_df) <- c("Actual", "Predicted")
+lasso_plot <- ggplot(data = lasso_df, aes(x = Predicted, y = Actual)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "#039be5", size = 1) + 
+  labs(title = "Actual SDS Score vs Predicted SDS Score", subtitle = "LASSO",
+       x = "Predicted SDS Score", y = "Actual SDS Score")
+
+ridge_mod <- cv.glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                       y = train_imp[,58], alpha = 0)
+best_lambda_ridge <- ridge_mod$lambda.min
+best_ridge <- glmnet(x = as.matrix(train_imp[,c(2:57,60:61)]), 
+                     y = train_imp[,58], 
+                     alpha = 0, lambda = best_lambda_ridge)
+ridge_error <- test_imp$SDS.SDS_Total_Raw - 
+  predict(best_ridge, s = best_lambda_ridge, 
+          newx = as.matrix(test_imp[,c(2:57,60:61)]))
+ridge_mse <- mean(ridge_error^2)
+cat("RMSE for Ridge Regression:", sqrt(ridge_mse), "\n")
+best_lasso$beta
+
+ridge_df <- data.frame(test_imp$SDS.SDS_Total_Raw, 
+                       predict(best_ridge, s = best_lambda_ridge, 
+                               newx = as.matrix(test_imp[,c(2:57,60:61)])))
+colnames(ridge_df) <- c("Actual", "Predicted")
+ridge_plot <- ggplot(data = ridge_df, aes(x = Predicted, y = Actual)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "#039be5", size = 1) + 
+  labs(title = "Actual SDS Score vs Predicted SDS Score", subtitle = "Ridge",
+       x = "Predicted SDS Score", y = "Actual SDS Score")
+
+print(lasso_plot)
+print(ridge_plot)
+```
 
 
 ## Random Forest
 
 Random Forest is a classification method that is used to make decision trees for prediction. For this project, we wanted to find predict Severity Impairment Index (SII) and Sleep Disturbance Scale (SDS),  both are different type of variables so it was appropriate to use since Random Forest could interact with both continuous and categorical variable. We created two random forest regression models predicting SII and SDS scores. After performing random forest, higher score in PCIAT test appeared to be highly related to SII and SDS scores, indicating that the participants who strongly agree are more likely related to higher Severity Impairment Index and Sleep Disturbance Scale. 
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE, eval = TRUE}
+Train_data <- read.csv("train.csv")
+Test_data <- read.csv("test.csv")
 
+colnames(Train_data) = gsub("-", "_", colnames(Train_data))
+
+col_na_props <- colMeans(is.na(Train_data))
+Train_data <- Train_data[, col_na_props <= 0.4]
+
+row_na_props <- rowMeans(is.na(Train_data))  
+Train_data <- Train_data[row_na_props <= 0.4, ]
+
+Train_data <- Train_data %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .))) %>%
+  mutate(across(where(is.character), ~ifelse(is.na(.), names(which.max(table(.))), .)))
+
+#kable(col_na_props, caption = "Proportion of NA values by Variable", col.names = c("Variable", "p"))
+
+col_na_props <- colMeans(is.na(Test_data))
+Test_data <- Test_data[, col_na_props <= 0.1]
+
+row_na_props <- rowMeans(is.na(Test_data))  
+Test_data <- Test_data[row_na_props <= 0.1, ]
+
+Test_data <- Test_data %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .))) %>%
+  mutate(across(where(is.character), ~ifelse(is.na(.), names(which.max(table(.))), .)))
+
+Train_data$sii <- as.factor(Train_data$sii)
+
+Test <- Train_data[]
+
+rf_sii <- randomForest(sii ~ . - PCIAT.PCIAT_Total - id, data = Train_data, ntree = 500, mtry = sqrt(ncol(Train_data) - 1))
+Importance_features <- importance(rf_sii)
+selected_features <- names(Importance_features[Importance_features > 30])
+train_selected <- Train_data[, c(selected_features, "sii")]
+
+kable(Importance_features, caption = "Variable Importance:")
+
+Importance_ft <- as.data.frame(importance(rf_sii))
+Importance_ft$Variable <- rownames(Importance_ft)
+Importance_ft <- Importance_ft[Importance_ft$Variable != "PCIAT.PCIAT_Total", ]
+Importance_ft <- Importance_ft[order(Importance_ft$MeanDecreaseGini, decreasing = TRUE), ]
+
+new_order <- 30
+importance_ordered <- Importance_ft[1:new_order,]
+
+rf_plot_1 = ggplot(importance_ordered, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini, fill = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", color = "black", width = 0.7) +
+  coord_flip() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Variable Importance Plot - SII",
+       x = "Variables",
+       y = "Mean Decrease in Gini") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text.y = element_text(size =12),
+        axis.title.x = element_text(size = 10),
+        legend.position = "none")
+
+print(rf_plot_1)
+
+rf_sds <- randomForest(sii ~ . - PCIAT.PCIAT_Total - id, data = Train_data, ntree = 500, mtry = sqrt(ncol(Train_data) - 1))
+
+importance_sds <- as.data.frame(importance(rf_sds))
+importance_sds$Variable <- rownames(importance_sds)
+importance_sds <- importance_sds[importance_sds$Variable != "PCIAT.PCIAT_Total", ]
+importance_sds <- importance_sds[order(importance_sds$MeanDecreaseGini, decreasing = TRUE), ]
+
+new_order_sds <- 30
+importance_ordered_sds <- importance_sds[1:new_order_sds,]
+
+rf_plot_2 = ggplot(importance_ordered_sds, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini, fill = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", color = "black", width = 0.7) +
+  coord_flip() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Variable Importance Plot - SDS",
+       x = "Variables",
+       y = "Mean Decrease in Gini") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text.y = element_text(size =12),
+        axis.title.x = element_text(size = 10),
+        legend.position = "none")
+print(rf_plot_2)
 ```
 
 
@@ -119,21 +256,7 @@ Random Forest is a classification method that is used to make decision trees for
 
 Linear Discriminant Analysis (LDA) is a classification method that assumes the predictors for each class follow a multivariate Gaussian distribution with class-specific means and a shared covariance matrix. It estimates the posterior probabilities P(Y=k|X=x) using Bayes’ theorem and assigns observations to the class with the highest posterior. LDA’s decision boundaries are linear functions of the predictors, making it effective in separating classes under the Gaussian assumption. LDA operates by creating linear combinations of predictors that separates classes of a categorical response.
 
-
-Prior to fitting the LDA model, we removed collinear variables from the data. We fit a model using 80 percent of the data as the training set and used the remaining 20 percent as the test set to predict what level `SII` might be classified as. We then created a confusion matrix for the training and testing sets.
-
-
-# Results
-
-## Lasso
-
-## Ridge
-
-## Random Forest
-
-## Linear Discriminant Analysis
-
-The LDA model performed very well. When evaluated on the training set, the model yielded a 1.19 percent error rate. When evaluated on the testing set, the model yielded a 0.72 percent error rate. 
+Prior to fitting the LDA model, we removed collinear variables from the data. We fit a model using 80 percent of the data as the training set and used the remaining 20 percent as the test set to predict what level `SII` might be classified as. We then created a confusion matrix for the training and testing sets. 
 ```{r, include = FALSE}
 library(MASS)
 train = read_csv("train.csv")
@@ -186,14 +309,10 @@ lda_predictions_train = predict(lda_model_train, lda_data_train)
   lda_data_train$predicted_sii = lda_predictions_train$class
 
 confusion_matrix_train = table(lda_data_train$sii, lda_data_train$predicted_sii)
-print("Train Confusion Matrix:")
-kable(confusion_matrix_train)
 
 accuracy_train = sum(diag(confusion_matrix_train)) / sum(confusion_matrix_train)
-print(paste("Train Accuracy:", round(accuracy_train * 100, 2), "%"))
 
 error_rate_train = 1 - accuracy_train
-print(paste("Train Error Rate:", round(error_rate_train * 100, 2), "%"))
 
 lda_discriminants = lda_predictions_train$x
 lda_discriminants = as.data.frame(lda_discriminants)
@@ -224,14 +343,10 @@ lda_predictions_test = predict(lda_model_test, lda_data_test)
 
 # Confusion Matrix
 confusion_matrix_test = table(lda_data_test$sii, lda_data_test$predicted_sii)
-print("Test Confusion Matrix:")
-kable(confusion_matrix_test)
 
 accuracy_test = sum(diag(confusion_matrix_test)) / sum(confusion_matrix_test)
-print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
 
 error_rate_test = 1 - accuracy_test
-print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
 
 print(plot)
 
@@ -239,6 +354,24 @@ detach("package:MASS", unload = TRUE)
 ```
 
 
+# Results
+
+As stated previously, root mean squared error was used to evaluate the lasso and ridge models. The optimal Lasso model yielded an RMSE of 10.73954. The optimal Ridge regression model yielded an RMSE of 10.6742.
+
+
+When evaluating the LDA model on the training set, the model yielded a 1.19 percent error rate. When evaluated on the testing set, the model yielded a 0.72 percent error rate, which is evidence of strong predictive power. 
+```{r, echo = FALSE, eval = TRUE}
+kable(confusion_matrix_train, caption = "Train Confusion Matrix:")
+print(paste("Train Accuracy:", round(accuracy_train * 100, 2), "%"))
+print(paste("Train Error Rate:", round(error_rate_train * 100, 2), "%"))
+
+
+kable(confusion_matrix_test, caption = "Test Confusion Matrix:")
+print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
+print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
+```
+
+
 # Discussion
 
-Because of the minuscule error rates from the LDA model, we speculate there may be over-fitting in the model. Even though collinear variables were removed, there may be other variables that could cause this. Failure to remove variables that were mostly NA values may be attribute to this as well. However, after re-evaluating the model with different techniques to handle NA values, the model behaved similarly, and the error rate was only slightly larger.
+The LDA model performed better than expected, however, rhe minuscule error rates may be cause for speculation that there may be over-fitting present in the model. Even though collinearity was accounted for, there may be other variables that could cause this that escaped pruning. Failure to remove variables that were mostly NA values may be attribute to this as well. However, after re-evaluating the model with different techniques to handle NA values, the model behaved similarly, and the error rate was only slightly larger.
