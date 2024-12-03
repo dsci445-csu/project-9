@@ -84,7 +84,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/dealingWithNAs.png
 - Test RMSE for the best Lasso model was 10.73954
 
 ```{r}
-# Lasso Plot
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/predicted_sds_plot.png")
 ```
 
 ## Ridge 
@@ -94,19 +94,15 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/dealingWithNAs.png
 - Test RMSE for best Ridge model was 10.6742
 
 ```{r}
-# Ridge plot
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/ridge_plot.png")
 ```
 
 # Random Forest
 
 ## Random Forest
 
-- Removed predictors and observations with more than 40% missing data
-- A total of 36 variables and 1,225 observations were excluded
-- Applied Random Forest to identify key variables associated with:
-1. Severity Impairment Index (SII)
-2. Sleep Disturbance Scale (SDS)
-- Variable Adjustments
+- Removed predictors and observations with more than 40% missing data; 36 variables, 1,225 observations excluded
+- Applied Random Forest to identify key variables associated with SII and SDS
 - Excluded the Parent-Child Internet Addiction Test (PCIAT) total score because it is a linear combination of other PCIAT
 variables.
 - PCIAT variables are categorical, ranging from 0 (strongly disagree) to 5 (strongly agree).
@@ -118,7 +114,7 @@ variables.
 - Physical measures (Weight, Height, BMI) are the next most important contributors
 
 ```{r}
-# RF variable importance plot #1
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_1.png")
 ```
 
 ## Random Forest
@@ -128,7 +124,7 @@ variables.
 - Physical measures are the second most important contributors, consistent with the SII results.
 
 ```{r}
-# RF variable importance plot #2
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_2.png")
 ```
 
 # Linear Discriminant Analysis
@@ -144,7 +140,7 @@ variables.
 3. Removing Variables
 
 ```{r}
-# image
+include_graphics("C:/Users/natha/OneDrive/Pictures/Screenshots/Screenshot 2024-11-29 142953.png")
 ```
 
 ## Linear Discriminant Analysis
@@ -156,6 +152,10 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Disc
 ```
 
 ## Linear Discriminant Analysis
+
+- Points of same class grouped together
+- Observable approximate decision boundaries
+
 ```{r, eval = TRUE, echo= FALSE, message = FALSE, warning = FALSE}
 include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Discriminant Analysis/Plots/lda_plot_naRm.png")
 ```
