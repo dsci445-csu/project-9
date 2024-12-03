@@ -39,8 +39,8 @@ library(knitr)
 
 - “SII” stands for “Severity Impairment Index”
 
-```{r cars, echo = TRUE}
-# plot
+```{r}
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sii_barplot.png")
 ```
 
 ## Exploratory Data Analysis
@@ -48,9 +48,8 @@ library(knitr)
 - “SDS” stands for “Sleep Disturbance Scale”
 
 ```{r}
-# plot
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sds_boxplot.png")
 ```
-
 
 # Linear Regression
 
@@ -63,7 +62,7 @@ library(knitr)
 - 1097 observations removed this way
 
 ```{r}
-# NA tables
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/dealingWithNAs.png")
 ```
 
 ## Dealing with NAs
@@ -152,8 +151,12 @@ variables.
 
 - Test Data Confusion Matrix: 99.27% accuracy
 
-```{r}
-# conf mat
-# graph
+```{r, eval = TRUE, echo= FALSE, message = FALSE, warning = FALSE}
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Discriminant Analysis/Plots/LDA_test_confmat.png")
+```
+
+## Linear Discriminant Analysis
+```{r, eval = TRUE, echo= FALSE, message = FALSE, warning = FALSE}
+include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Discriminant Analysis/Plots/lda_plot_naRm.png")
 ```
 
