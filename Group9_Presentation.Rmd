@@ -40,7 +40,7 @@ library(knitr)
 - “SII” stands for “Severity Impairment Index”
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sii_barplot.png")
+include_graphics("~/project-9/sii_barplot.png")
 ```
 
 ## Exploratory Data Analysis
@@ -48,7 +48,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sii_barplot.png")
 - “SDS” stands for “Sleep Disturbance Scale”
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sds_boxplot.png")
+include_graphics("~/project-9/sds_boxplot.png")
 ```
 
 # Linear Regression
@@ -62,7 +62,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/sds_boxplot.png")
 - 1097 observations removed this way
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/dealingWithNAs.png")
+include_graphics("~/project-9/dealingWithNAs.png")
 ```
 
 ## Dealing with NAs
@@ -84,7 +84,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/dealingWithNAs.png
 - Test RMSE for the best Lasso model was 10.73954
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/predicted_sds_plot.png")
+include_graphics("~/project-9/lasso_plot.png")
 ```
 
 ## Ridge 
@@ -94,7 +94,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/predicted_sds_plot
 - Test RMSE for best Ridge model was 10.6742
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/ridge_plot.png")
+include_graphics("~/project-9/ridge_plot.png")
 ```
 
 # Random Forest
@@ -114,7 +114,7 @@ variables.
 - Physical measures (Weight, Height, BMI) are the next most important contributors
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_1.png")
+include_graphics("~/project-9/rf_plot_1.png")
 ```
 
 ## Random Forest
@@ -124,7 +124,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_1.png")
 - Physical measures are the second most important contributors, consistent with the SII results.
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_2.png")
+include_graphics("~/project-9/rf_plot_2.png")
 ```
 
 # Linear Discriminant Analysis
@@ -140,7 +140,7 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/rf_plot_2.png")
 3. Removing Variables
 
 ```{r}
-include_graphics("C:/Users/natha/OneDrive/Pictures/Screenshots/Screenshot 2024-11-29 142953.png")
+include_graphics("~/project-9/manyNAs.png")
 ```
 
 ## Linear Discriminant Analysis
@@ -148,7 +148,7 @@ include_graphics("C:/Users/natha/OneDrive/Pictures/Screenshots/Screenshot 2024-1
 - Test Data Confusion Matrix: 99.27% accuracy
 
 ```{r, eval = TRUE, echo= FALSE, message = FALSE, warning = FALSE}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Discriminant Analysis/Plots/LDA_test_confmat.png")
+include_graphics("~/project-9/nathan/Linear Discriminant Analysis/Plots/LDA_test_confmat.png")
 ```
 
 ## Linear Discriminant Analysis
@@ -157,6 +157,6 @@ include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Disc
 - Observable approximate decision boundaries
 
 ```{r, eval = TRUE, echo= FALSE, message = FALSE, warning = FALSE}
-include_graphics("C:/Users/natha/OneDrive/Documents/project-9/nathan/Linear Discriminant Analysis/Plots/lda_plot_naRm.png")
+include_graphics("~/project-9/nathan/Linear Discriminant Analysis/Plots/lda_plot_naRm.png")
 ```
 
