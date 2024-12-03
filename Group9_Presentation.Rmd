@@ -1,5 +1,5 @@
 ---
-title: "DSCI445 Final Presentation"
+title: "Predicting Problematic Internet Use"
 author: "Kwan Eum, Eddie Haggerty, Nathan Seto"
 date: "`r Sys.Date()`"
 output: powerpoint_presentation
@@ -7,11 +7,27 @@ output: powerpoint_presentation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE, warning = FALSE, error = FALSE)
+
+library(readr)       
+library(dplyr)       
+library(caret)       
+library(ggplot2)
+library(parsnip)
+library(mice)
+library(discrim)
+library(tidyr)
+library(lda)
+library(VIM)
+library(MASS)
+library(pander)
+library(kableExtra)
+library(class)
+library(randomForest)
+library(ISLR)
+library(glmnet)
+library(tidyverse)
+library(knitr)
 ```
-
-# Predicting Problematic Internet Use
-
-
 
 ## Premise: Kaggle Competition
 
