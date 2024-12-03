@@ -1,51 +1,244 @@
 ---
 title: "Predicting Problematic Internet Usage"
 author: "Kwan Eum, Eddie Haggerty, Nathan Seto"
-output: pdf_document
+output: 
+  pdf_document: default
 ---
+
+```{r setup, include = FALSE}
+library(knitr)
+library(readr)       
+library(dplyr)       
+library(caret)       
+library(ggplot2)
+library(parsnip)
+library(mice)
+library(discrim)
+library(tidyr)
+library(lda)
+library(VIM)
+library(kableExtra)
+library(class)
+library(randomForest)
+library(ISLR)
+library(glmnet)
+library(tidyverse)
+```
 
 # Introduction
 
-This project stems from the Kaggle Competition, [“Problematic Internet Use”](https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use/overview)  by the Child Mind Institute. The goal is to predict the level of each participant’s Severity Impairment Index (`SII`) score, which is a measure of problematic internet use by children and adolescents. Most predictor variables have to do with the participants’ physical activity and online habits. We also wanted to see if we could predict the Sleep Disturbance Scale (`SDS`) score, which measures quality of sleep and is used in diagnosing certain conditions. We built multiple machine learning models with these goals in mind. 
-$\\$
+This project stems from the Kaggle Competition, “Problematic Internet Use”  by the Child Mind Institute. The goal is to predict the level of each participant’s Severity Impairment Index (`SII`) score, which is a measure of problematic internet use by children and adolescents. Most predictor variables have to do with the participants’ physical activity and online habits. We also wanted to see if we could predict the Sleep Disturbance Scale (`SDS`) score, which measures quality of sleep and is used in diagnosing certain conditions. We built multiple machine learning models with these goals in mind. 
+
 
 # Methods
 
 ## Handling NA Values
 
 The data set that we were given for the competition had a lot of NA values. We tried a couple different methods for dealing with the NA values in our data set. For our linear regression approach, there were a few steps in our process. First, we removed the variables that had more than 50 percent NA values. There were only 10 variables that fit this description, but they all had a large proportion of NA values and we felt it would be best if we excluded those variables. Then, we removed all observations that had more than 50 percent NA values. There were 1097 variables removed this way, with a surprising large number of those observations having more than 90 percent NA values. Finally, we used imputation to fill in the remaining NA values.
-$\\$
+
+
+```{r, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+
+set.seed(445)
+cmi <- read.csv("train.csv")
+notimportant <- c("CGAS.Season", "Physical.Season", "Fitness_Endurance.Season",
+                  "FGC.Season", "BIA.Season", "Basic_Demos.Enroll_Season",
+                  "PAQ_A.Season", "PAQ_C.Season", "PCIAT.Season",
+                  "SDS.Season", "PreInt_EduHx.Season")
+
+
+# Find out how many NAs each variable has
+
+dfnas <- data.frame(colnames(cmi), rep(0, times = ncol(cmi)))
+for(i in 1:ncol(cmi)){
+  dfnas[i,2] <- sum(is.na(cmi[,i]))
+}
+colnames(dfnas) <- c("Variable", "Total_NAs")
+dfnas <- mutate(dfnas, "NA_Proportion" = round(Total_NAs/nrow(cmi),3))
+kable(filter(dfnas, NA_Proportion > 0.5))
+toomanynas <- filter(dfnas, NA_Proportion > 0.5)$Variable
+
+
+# Remove "bad" variables
+
+removevars <- c(notimportant, toomanynas)
+suppressWarnings(cmi <- select(cmi, -removevars))
+
+
+# Find out how many NAs each observation has
+
+dfnas2 <- data.frame(cmi$id, rep(0, times = nrow(cmi)))
+for(i in 1:nrow(cmi)){
+  dfnas2[i,2] <- sum(is.na(cmi[i,c(2:61)]))
+}
+colnames(dfnas2) <- c("ID", "Total_NAs")
+dfnas2 <- mutate(dfnas2, "NA_Proportion" = round(Total_NAs/ncol(cmi),3))
+#sum(dfnas2$NA_Proportion > 0.5)
+
+
+# Remove "bad" observations
+
+toomanynas2 <- filter(dfnas2, NA_Proportion > 0.5)$ID
+kable(head(arrange(dfnas2, desc(NA_Proportion)),10))
+dfnas2 <- mutate(dfnas2, "Few_NAs" = ifelse(NA_Proportion <= 0.5, 1, 0))
+cmi <- cmi[dfnas2$Few_NAs == 1,]
+
+
+# Split into training and testing
+
+sample1 <- sample(c(1,0), size = nrow(cmi), replace = TRUE, prob = c(0.8, 0.2))
+train <- cmi[sample1 == 1,]
+test <- cmi[sample1 == 0,]
+```
+
 
 For the other methods, we tried removing observations with a missing value for `SII` score and imputing the rest of the NA values. We are interested to see which of these methods gives us better results. 
-$\\$
+
 
 
 ## Linear Regression
 
 Since the `SII` score for the participants is a categorical variable, we couldn’t use linear regression to predict `SII` score. While `SDS` score is confined to only integers, it’s not a categorical variable, so we can use linear regression to make predictions on that variable.
-$\\$
+
 
 The first linear regression method we used was Lasso regression. Lasso regression suggested that we only use 28 variables to predict `SDS` score. It was interesting to see that only 2 of the 17 Bioelectric Impedance Analysis (BIA) variables were used. BIA measures things like body mass index, fat free mass, extracellular water, lean dry mass and other things of that nature. The only two BIA variables that were used in this model were Body Mass Index and Activity Level. After using cross validation to find the best value for $\lambda$, our best Lasso model ended up with a Test RMSE of 10.73954.
-$\\$
+
 
 The other linear regression method we used was Ridge regression. Ridge is very similar to Lasso, but does have a slightly different variable selection process that can result in a different “best model” than Lasso. In this case, the exact same predictors were used in both models, just with different coefficients associated with those predictors. After using cross validation again to find the best value for $\lambda$, our best Ridge model ended up with a Test RMSE of 10.6742.
-$\\$
+
 
 ## Random Forest
+
+Random Forest is a classification method that is used to make decision trees for prediction. For this project, we wanted to find predict Severity Impairment Index (SII) and Sleep Disturbance Scale (SDS),  both are different type of variables so it was appropriate to use since Random Forest could interact with both continuous and categorical variable. We created two random forest regression models predicting SII and SDS scores. After performing random forest, higher score in PCIAT test appeared to be highly related to SII and SDS scores, indicating that the participants who strongly agree are more likely related to higher Severity Impairment Index and Sleep Disturbance Scale. 
+```{r}
+
+```
 
 
 ## Linear Discriminant Analysis
 
-Linear Discriminant Analysis (LDA) is a classification method that assumes the predictors for each class follow a multivariate Gaussian distribution with class-specific means and a shared covariance matrix. It estimates the posterior probabilities P(Y=k|X=x) using Bayes’ theorem and assigns observations to the class with the highest posterior. LDA’s decision boundaries are linear functions of the predictors, making it effective in separating classes under the Gaussian assumption.
-$\\$
+Linear Discriminant Analysis (LDA) is a classification method that assumes the predictors for each class follow a multivariate Gaussian distribution with class-specific means and a shared covariance matrix. It estimates the posterior probabilities P(Y=k|X=x) using Bayes’ theorem and assigns observations to the class with the highest posterior. LDA’s decision boundaries are linear functions of the predictors, making it effective in separating classes under the Gaussian assumption. LDA operates by creating linear combinations of predictors that separates classes of a categorical response.
+
 
 Prior to fitting the LDA model, we removed collinear variables from the data. We fit a model using 80 percent of the data as the training set and used the remaining 20 percent as the test set to predict what level `SII` might be classified as. We then created a confusion matrix for the training and testing sets.
-$\\$
 
 
 # Results
 
+## Lasso
+
+## Ridge
+
+## Random Forest
+
+## Linear Discriminant Analysis
+
+The LDA model performed very well. When evaluated on the training set, the model yielded a 1.19 percent error rate. When evaluated on the testing set, the model yielded a 0.72 percent error rate. 
+```{r, include = FALSE}
+library(MASS)
+train = read_csv("train.csv")
+
+# LDA with removal of NA in response
+train_clean = train[!is.na(train$sii), ]
+
+colnames(train) = gsub("-", "_", colnames(train)) 
+train_clean = train_clean[, !grepl("Season", names(train))]
+train_clean$sii = factor(train_clean$sii) # Making sure `sii` is a factor with 4 levels (plus extra level for NAs later)
+
+# Imputation
+categorical_vars = train_clean[, sapply(train_clean, function(x) is.factor(x) | is.character(x))]
+pciat_columns = grep("PCIAT", names(train_clean), value = TRUE)
+pciat_columns = pciat_columns[pciat_columns != "PCIAT_PCIAT_Total"]
+categorical_vars = cbind(categorical_vars, train_clean[, pciat_columns])
+
+categorical_vars = categorical_vars %>%
+  mutate(across(everything(), ~ replace(., is.na(.), "Missing")))
+
+quantitative_vars = train_clean[, sapply(train_clean, is.numeric)]
+
+quantitative_vars_imputed = quantitative_vars %>%
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
+```
+```{r, include = FALSE}
+# Accounting for collinearity
+correlation_matrix = cor(quantitative_vars_imputed)
+  high_corr_pairs = findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE)
+    quantitative_vars_filtered = quantitative_vars_imputed[, -high_corr_pairs]
+```
+```{r, echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE}
+train_data = bind_cols(categorical_vars, quantitative_vars_filtered)
+
+quantitative_vars_filtered = quantitative_vars_filtered %>% mutate(sii = train_data$sii)
+
+# Split data into train and test
+set.seed(445)  
+trainIndex = createDataPartition(train_data$sii, p = 0.8, list = FALSE)
+train_set = train_data[trainIndex, ]
+test_set = train_data[-trainIndex, ]
+
+lda_data_train = train_set
+  lda_data_train$sii = as.factor(lda_data_train$sii)
+    lda_data_train = subset(lda_data_train, select = -id)
+
+lda_model_train = lda(sii ~ ., data = lda_data_train)
+
+lda_predictions_train = predict(lda_model_train, lda_data_train)
+  lda_data_train$predicted_sii = lda_predictions_train$class
+
+confusion_matrix_train = table(lda_data_train$sii, lda_data_train$predicted_sii)
+print("Train Confusion Matrix:")
+kable(confusion_matrix_train)
+
+accuracy_train = sum(diag(confusion_matrix_train)) / sum(confusion_matrix_train)
+print(paste("Train Accuracy:", round(accuracy_train * 100, 2), "%"))
+
+error_rate_train = 1 - accuracy_train
+print(paste("Train Error Rate:", round(error_rate_train * 100, 2), "%"))
+
+lda_discriminants = lda_predictions_train$x
+lda_discriminants = as.data.frame(lda_discriminants)
+
+if (ncol(lda_discriminants) >= 2) {
+  lda_data_train$LD1 = lda_discriminants[, 1] 
+  lda_data_train$LD2 = lda_discriminants[, 2]
+  plot = ggplot(lda_data_train, aes(x = LD1, y = LD2, color = sii)) +
+    geom_point(alpha = 0.7) +
+    labs(title = "LDA: Linear Discriminants 1 vs 2",
+         x = "Linear Discriminant 2",
+         y = "Linear Discriminant 1") +
+    theme_minimal() +
+    scale_color_manual(values = c("red", "blue", "green", "purple"))  
+} else {
+  print("Insufficient linear discriminants for visualization.")
+}
+
+lda_data_test = test_set
+  lda_data_test$sii = as.factor(lda_data_test$sii)
+    lda_data_test = subset(lda_data_test, select = -id)
+
+lda_model_test = lda(sii ~ ., data = lda_data_test)
+
+# Make prediction
+lda_predictions_test = predict(lda_model_test, lda_data_test)
+  lda_data_test$predicted_sii = lda_predictions_test$class
+
+# Confusion Matrix
+confusion_matrix_test = table(lda_data_test$sii, lda_data_test$predicted_sii)
+print("Test Confusion Matrix:")
+kable(confusion_matrix_test)
+
+accuracy_test = sum(diag(confusion_matrix_test)) / sum(confusion_matrix_test)
+print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
+
+error_rate_test = 1 - accuracy_test
+print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
+
+print(plot)
+
+detach("package:MASS", unload = TRUE)
+```
+
 
 # Discussion
 
-
+Because of the minuscule error rates from the LDA model, we speculate there may be over-fitting in the model. Even though collinear variables were removed, there may be other variables that could cause this. Failure to remove variables that were mostly NA values may be attribute to this as well. However, after re-evaluating the model with different techniques to handle NA values, the model behaved similarly, and the error rate was only slightly larger.
