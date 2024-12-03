@@ -120,7 +120,7 @@ lda_predictions_test = predict(lda_model_test, lda_data_test)
 # Confusion Matrix
 confusion_matrix_test = table(lda_data_test$sii, lda_data_test$predicted_sii)
 print("Test Confusion Matrix:")
-print(pander(confusion_matrix_test))
+pander(confusion_matrix_test)
 
 accuracy_test = sum(diag(confusion_matrix_test)) / sum(confusion_matrix_test)
 print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
