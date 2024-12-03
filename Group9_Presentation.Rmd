@@ -24,17 +24,17 @@ knitr::opts_chunk$set(echo = FALSE, eval = TRUE, warning = FALSE, error = FALSE)
 - “SII” stands for “Severity Impairment Index”
 
 ```{r cars, echo = TRUE}
- ```
-
-## Slide with Plot
-
-```{r pressure}
-plot(pressure)
+# plot
 ```
 
 ## Exploratory Data Analysis
 
-“SDS” stands for “Sleep Disturbance Scale”
+- “SDS” stands for “Sleep Disturbance Scale”
+
+```{r}
+# plot
+```
+
 
 # Linear Regression
 
@@ -85,14 +85,15 @@ plot(pressure)
 # Random Forest
 
 ## Random Forest
-Data Cleaning: 
+
 - Removed predictors and observations with more than 40% missing data
 - A total of 36 variables and 1,225 observations were excluded
 - Applied Random Forest to identify key variables associated with:
 1. Severity Impairment Index (SII)
 2. Sleep Disturbance Scale (SDS)
 - Variable Adjustments
-- Excluded the Parent-Child Internet Addiction Test (PCIAT) total score because it is a linear combination of other PCIAT variables.
+- Excluded the Parent-Child Internet Addiction Test (PCIAT) total score because it is a linear combination of other PCIAT
+variables.
 - PCIAT variables are categorical, ranging from 0 (strongly disagree) to 5 (strongly agree).
 
 ## Random Forest
