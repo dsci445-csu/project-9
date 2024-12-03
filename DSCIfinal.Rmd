@@ -1,0 +1,197 @@
+---
+title: "DSCI project"
+author: "Kwan Eum"
+date: "2024-11-18"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ISLR)
+library(dplyr)
+library(glmnet)
+library(caret)
+library(randomForest)
+library(ggplot2)
+```
+
+
+```{r}
+Train_data <- read.csv("Downloads/train.csv")
+Test_data <- read.csv("Downloads/test.csv")
+
+colnames(Train_data) = gsub("-", "_", colnames(Train_data))
+```
+
+
+
+```{r}
+col_na_props <- colMeans(is.na(Train_data))
+Train_data <- Train_data[, col_na_props <= 0.4]
+
+row_na_props <- rowMeans(is.na(Train_data))  
+Train_data <- Train_data[row_na_props <= 0.4, ]
+
+Train_data <- Train_data %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .))) %>%
+  mutate(across(where(is.character), ~ifelse(is.na(.), names(which.max(table(.))), .)))
+
+dim(Train_data)
+sum(is.na(Train_data))
+
+```
+
+```{r}
+col_na_props
+```
+
+```{r}
+col_na_props <- colMeans(is.na(Test_data))
+Test_data <- Test_data[, col_na_props <= 0.1]
+
+row_na_props <- rowMeans(is.na(Test_data))  
+Test_data <- Test_data[row_na_props <= 0.1, ]
+
+Test_data <- Test_data %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .))) %>%
+  mutate(across(where(is.character), ~ifelse(is.na(.), names(which.max(table(.))), .)))
+
+dim(Test_data)
+sum(is.na(Test_data))
+```
+
+```{r}
+Train_data$sii <- as.factor(Train_data$sii)
+
+Test <- Train_data[]
+```
+
+```{r}
+rf_sii <- randomForest(sii ~ . - PCIAT.PCIAT_Total - id, data = Train_data, ntree = 500, mtry = sqrt(ncol(Train_data) - 1))
+
+importance(rf_sii)
+```
+
+```{r}
+Importance_features <- importance(rf_sii)
+selected_features <- names(Importance_features[Importance_features > 30])
+train_selected <- Train_data[, c(selected_features, "sii")]
+
+print(Importance_features)
+```
+
+```{r}
+Importance_ft <- as.data.frame(importance(rf_sii))
+Importance_ft$Variable <- rownames(Importance_ft)
+Importance_ft <- Importance_ft[Importance_ft$Variable != "PCIAT.PCIAT_Total", ]
+Importance_ft <- Importance_ft[order(Importance_ft$MeanDecreaseGini, decreasing = TRUE), ]
+
+
+```
+
+
+```{r}
+new_order <- 30
+importance_ordered <- Importance_ft[1:new_order,]
+
+ggplot(importance_ordered, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini, fill = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", color = "black", width = 0.7) +
+  coord_flip() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Variable Importance Plot - SII",
+       x = "Variables",
+       y = "Mean Decrease in Gini") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text.y = element_text(size =12),
+        axis.title.x = element_text(size = 10),
+        legend.position = "none")
+```
+
+```{r}
+rf_sds <- randomForest(sii ~ . - PCIAT.PCIAT_Total - id, data = Train_data, ntree = 500, mtry = sqrt(ncol(Train_data) - 1))
+
+
+```
+
+```{r}
+importance_sds <- as.data.frame(importance(rf_sds))
+importance_sds$Variable <- rownames(importance_sds)
+importance_sds <- importance_sds[importance_sds$Variable != "PCIAT.PCIAT_Total", ]
+importance_sds <- importance_sds[order(importance_sds$MeanDecreaseGini, decreasing = TRUE), ]
+
+```
+
+```{r}
+new_order_sds <- 30
+importance_ordered_sds <- importance_sds[1:new_order_sds,]
+
+ggplot(importance_ordered_sds, aes(x = reorder(Variable, MeanDecreaseGini), y = MeanDecreaseGini, fill = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", color = "black", width = 0.7) +
+  coord_flip() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Variable Importance Plot - SDS",
+       x = "Variables",
+       y = "Mean Decrease in Gini") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text.y = element_text(size =12),
+        axis.title.x = element_text(size = 10),
+        legend.position = "none")
+```
+
+```{r}
+predicted_val <- predict(rf_sii, newdata = Test_data)
+
+actual_val <- Test_data$sii
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
