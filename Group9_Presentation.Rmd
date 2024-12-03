@@ -38,3 +38,105 @@ plot(pressure)
 
 # Linear Regression
 
+
+## Dealing with NAs
+
+- Removed variables with proportion of NAs over 0.5
+- 10 Variables removed this way
+- Then removed all observations with proportion of NAs over 0.5
+- 1097 observations removed this way
+
+```{r}
+# NA tables
+```
+
+## Dealing with NAs
+
+- Used imputation for rest of NAs; mice and tidyr packages were good for this
+- There were still some NAs in the data after imputing
+- All remaining NAs were in same columns/rows
+- Chose to get rid of observations rather than removing more variables
+- Final dataset had 61 variables
+- Training set had 1584 observations
+- Test set had 360 observations
+
+## Lasso
+
+- Trying to predict SDS Score
+- 28 predictors were used, including sii
+- Only 2 of the 17 Bioelectric Impedance Analysis variables were used
+- BMI and Activity Level
+- Test RMSE for the best Lasso model was 10.73954
+
+```{r}
+# Lasso Plot
+```
+
+## Ridge 
+
+- Same 28 predictors were used in both Ridge and Lasso
+- Different coefficient estimates
+- Test RMSE for best Ridge model was 10.6742
+
+```{r}
+# Ridge plot
+```
+
+# Random Forest
+
+## Random Forest
+Data Cleaning: 
+- Removed predictors and observations with more than 40% missing data
+- A total of 36 variables and 1,225 observations were excluded
+- Applied Random Forest to identify key variables associated with:
+1. Severity Impairment Index (SII)
+2. Sleep Disturbance Scale (SDS)
+- Variable Adjustments
+- Excluded the Parent-Child Internet Addiction Test (PCIAT) total score because it is a linear combination of other PCIAT variables.
+- PCIAT variables are categorical, ranging from 0 (strongly disagree) to 5 (strongly agree).
+
+## Random Forest
+
+- The plot highlights the most important variables related to the SII.
+- PCIAT variables are the most strongly associated with SII.
+- Physical measures (Weight, Height, BMI) are the next most important contributors
+
+```{r}
+# RF variable importance plot #1
+```
+
+## Random Forest
+
+- This plot reflecting their importance in predicting the Sleep Disturbance Scale (SDS).
+- PCIAT variables again show the strongest association with SDS.
+- Physical measures are the second most important contributors, consistent with the SII results.
+
+```{r}
+# RF variable importance plot #2
+```
+
+# Linear Discriminant Analysis
+
+## Dealing with NAs
+
+- Options:
+1. Imputation 
+- Median for numerical variables
+- “Missing” for categorical variables
+2. Remove rows where response = NA
+- Followed with imputation
+3. Removing Variables
+
+```{r}
+# image
+```
+
+## Linear Discriminant Analysis
+
+- Test Data Confusion Matrix: 99.27% accuracy
+
+```{r}
+# conf mat
+# graph
+```
+
