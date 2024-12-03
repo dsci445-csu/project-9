@@ -6,30 +6,35 @@ output: powerpoint_presentation
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, warning = FALSE, error = FALSE)
 ```
 
-## R Markdown
+# Predicting Problematic Internet Use
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
 
-## Slide with Bullets
+## Premise: Kaggle Competition
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+- Child Mind Institute: Problematic Internet Use
+- Main goal of competition is to predict Severity Impairment Index (SII) score
+- Also wanted to try to predict Sleep Disturbance score (SDS) out of curiosity
 
-## Slide with R Output
+## Exploratory Data Analysis
+
+- “SII” stands for “Severity Impairment Index”
 
 ```{r cars, echo = TRUE}
-summary(cars)
-```
+ ```
 
 ## Slide with Plot
 
 ```{r pressure}
 plot(pressure)
 ```
+
+## Exploratory Data Analysis
+
+“SDS” stands for “Sleep Disturbance Scale”
+
+# Linear Regression
 
