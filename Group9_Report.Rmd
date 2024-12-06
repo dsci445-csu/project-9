@@ -30,8 +30,6 @@ library(tidyverse)
 This project stems from the Kaggle Competition, “Problematic Internet Use”  by the Child Mind Institute. The goal is to predict the level of each participant’s Severity Impairment Index (`SII`) score, which is a measure of problematic internet use by children and adolescents. Most predictor variables have to do with the participants’ physical activity and online habits. We also wanted to see if we could predict the Sleep Disturbance Scale (`SDS`) score, which measures quality of sleep and is used in diagnosing certain conditions. We built multiple machine learning models with these goals in mind. 
 
 
-# Methods
-
 ## Handling NA Values
 
 The data set that we were given for the competition had a lot of NA values. We tried a couple different methods for dealing with the NA values in our data set. For our linear regression approach, there were a few steps in our process. First, we removed the variables that had more than 50 percent NA values. There were only 10 variables that fit this description, but they all had a large proportion of NA values and we felt it would be best if we excluded those variables. Then, we removed all observations that had more than 50 percent NA values. There were 1097 variables removed this way, with a surprising large number of those observations having more than 90 percent NA values. Finally, we used imputation to fill in the remaining NA values.
@@ -82,9 +80,9 @@ dfnas2 <- mutate(dfnas2, "Few_NAs" = ifelse(NA_Proportion <= 0.5, 1, 0))
 cmi <- cmi[dfnas2$Few_NAs == 1,]
 ```
 
-
 For the other methods, we tried removing observations with a missing value for `SII` score and imputing the rest of the NA values. We are interested to see which of these methods gives us better results. 
 
+# The Models
 
 ## Linear Regression
 
@@ -354,12 +352,6 @@ print(plot)
 detach("package:MASS", unload = TRUE)
 ```
 
-
-# Results
-
-As stated previously, root mean squared error was used to evaluate the lasso and ridge models. The optimal Lasso model yielded an RMSE of 10.73954. The optimal Ridge regression model yielded an RMSE of 10.6742.
-
-
 When evaluating the LDA model on the training set, the model yielded a 1.19 percent error rate. When evaluated on the testing set, the model yielded a 0.72 percent error rate, which is evidence of strong predictive power. 
 ```{r, echo = FALSE, eval = TRUE}
 kable(confusion_matrix_train, caption = "Train Confusion Matrix:")
@@ -371,8 +363,5 @@ kable(confusion_matrix_test, caption = "Test Confusion Matrix:")
 print(paste("Test Accuracy:", round(accuracy_test * 100, 2), "%"))
 print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
 ```
-
-
-# Discussion
 
 The LDA model performed better than expected, however, rhe minuscule error rates may be cause for speculation that there may be over-fitting present in the model. Even though collinearity was accounted for, there may be other variables that could cause this that escaped pruning. Failure to remove variables that were mostly NA values may be attribute to this as well. However, after re-evaluating the model with different techniques to handle NA values, the model behaved similarly, and the error rate was only slightly larger.
