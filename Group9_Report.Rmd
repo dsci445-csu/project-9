@@ -365,3 +365,8 @@ print(paste("Test Error Rate:", round(error_rate_test * 100, 2), "%"))
 ```
 
 The LDA model performed better than expected, however, rhe minuscule error rates may be cause for speculation that there may be over-fitting present in the model. Even though collinearity was accounted for, there may be other variables that could cause this that escaped pruning. Failure to remove variables that were mostly NA values may be attribute to this as well. However, after re-evaluating the model with different techniques to handle NA values, the model behaved similarly, and the error rate was only slightly larger.
+
+
+# Conclusion 
+
+In conclusion, our exploration of various models to predict Severity Impairment Index (SII) and Sleep Disturbance Scale (SDS) scores highlights the challenges and strengths of different approaches. Random Forest and Linear Discriminant Analysis (LDA) showed strong predictive performance, with LDA achieving exceptionally low error rates, albeit with some concern for potential overfitting. Our data preprocessing, particularly handling missing values and addressing collinearity, played a crucial role in improving model reliability. Despite these efforts, differences in model performance suggest that further refinements, such as optimizing feature selection or exploring additional methods, could enhance predictions for these critical mental health indicators.
