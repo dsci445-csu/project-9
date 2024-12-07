@@ -4,7 +4,7 @@ Group 9 project for DSCI445 @ CSU
 Kaggle Competition Page:
 https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use/data
 
-- To replicate Lasso and Ridge regression, see 'Eddie_KNN.Rmd'.
+- To replicate Lasso and Ridge regression, see 'Eddie_LinearRegression.Rmd'.
 - To replicate Random Forest, see 'Kwan_RF.Rmd'.
 - To replicate Linear Discriminant Analysis, see 'Nathan_LDA.Rmd'.
 
