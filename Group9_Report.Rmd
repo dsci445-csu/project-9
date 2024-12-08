@@ -163,7 +163,8 @@ print(ridge_plot)
 
 ## Random Forest
 
-Random Forest is a classification method that is used to make decision trees for prediction. For this project, we wanted to find predict Severity Impairment Index (SII) and Sleep Disturbance Scale (SDS),  both are different type of variables so it was appropriate to use since Random Forest could interact with both continuous and categorical variable. We created two random forest regression models predicting SII and SDS scores. After performing random forest, higher score in PCIAT test appeared to be highly related to SII and SDS scores, indicating that the participants who strongly agree are more likely related to higher Severity Impairment Index and Sleep Disturbance Scale. 
+Random Forest is a classification and regression method used to predict both continuous and categorical variables. In this project, we built two Random Forest regression models to predict the Severity Impairment Index (SII) and Sleep Disturbance Scale (SDS). Data preprocessing involved removing variables with over 40% missing data, reducing the dataset by 36 variables and 1,225 observations. The PCIAT total score was excluded due to redundancy, but individual PCIAT variables were retained.The models showed that higher PCIAT scores are strongly associated with both SII and SDS, indicating that participants with stronger agreement on PCIAT statements tend to have higher severity impairment and sleep disturbance levels. Importance plots revealed PCIAT variables as the strongest predictors, with physical measures such as BMI, weight, height as secondary contributors. These findings highlight the significant role of PCIAT variables in predicting impairment and sleep disturbance issues, supported by physical measures for additional context.
+
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, eval = TRUE}
 Train_data <- read.csv("train.csv")
 Test_data <- read.csv("test.csv")
