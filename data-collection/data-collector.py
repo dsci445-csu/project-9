@@ -1,9 +1,7 @@
 import asyncio
 from requesturls import page_url, match_ids_url, match_url, timeline_url
 
-RATE_LIMIT = 100
-WINDOW = 120  # seconds
-REQUEST_INTERVAL = WINDOW / RATE_LIMIT  # 1.2s (for 100 requests per 2 minutes)
+
 MAX_CONCURRENT_REQUESTS = 5
 
 queue = [i for i in range(10)]
