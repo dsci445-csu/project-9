@@ -1,4 +1,5 @@
 import asyncio
+from keyqueue import KeyQueue
 from requesturls import page_url, match_ids_url, match_url, timeline_url
 
 
@@ -6,19 +7,16 @@ MAX_CONCURRENT_REQUESTS = 5
 
 queue = [i for i in range(10)]
 
-async def test():
-
-    while(queue):
-        print(queue.pop())
-        await asyncio.sleep(1)
-
-
-# two main modules
-# 1) key manager module: ensures valid keys
-# 1.5) interface between
-# 2) requester module: uses interface to grab keys and then uses them to get data
-
+async def main():
+    """Requests and saves data from the riot api given user specifications."""
+    queue: KeyQueue = KeyQueue()
+    
+    for i in range(10):
+        queue.add(f"KEY_{i}")
+    
+    for i in range(30):
+        print(await queue.get_next())
 
 
 if __name__ == "__main__":
-    asyncio.run(test())
+    asyncio.run(main())
