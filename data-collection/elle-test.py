@@ -28,5 +28,6 @@ async def main():
           elite_monster+=1
         if type == 'BUILDING_KILL':
           turrets_destroyed+=1
+        # minions killed, player gold over time
           
       
