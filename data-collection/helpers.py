@@ -127,8 +127,8 @@ def get_sampling_dt():
             print("Invalid")
 
     while True:
-        data_type = input("Enter Data Type: \n 1: Match Data \n 2: Timeline Data\n Type (1, 2): ")
-        if data_type in ['1', '2']:
+        data_type = input("Enter Data Type: \n 1: Match Data \n 2: Timeline Data\n 3: Both \n Type (1, 2, 3): ")
+        if data_type in ['1', '2', '3']:
             data_type = int(data_type)
             break
         else:

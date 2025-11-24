@@ -167,7 +167,7 @@ import json
 
 async def save_match_data_from_ids(session, match_ids, path):
     tasks = [request_data_from_match_id(session, id) for id in match_ids]
-    with open(path + ".jsonl", "a", encoding="utf-8") as outfile:
+    with open(path + "_matches.jsonl", "a", encoding="utf-8") as outfile:
         for task in tqdm(asyncio.as_completed(tasks),
                      total=len(tasks), 
                      desc="Getting Matches",
@@ -176,17 +176,16 @@ async def save_match_data_from_ids(session, match_ids, path):
             data = await task
             outfile.write(json.dumps(data) + "\n")
 
-async def get_timelines_from_ids(session, match_ids):
+async def save_timelines_from_ids(session, match_ids, path):
     tasks = [request_timeline_from_match_id(session, id) for id in match_ids]
-    timelines = []
-    for coro in tqdm(asyncio.as_completed(tasks),
-         total=len(tasks), 
-         desc="Getting Match IDs",
-         dynamic_ncols=True,
-         leave=True):
-        timelines.extend(await coro)
-    
-    return timelines
+    with open(path + "_timelines.jsonl", "a", encoding="utf-8") as outfile:
+        for task in tqdm(asyncio.as_completed(tasks),
+                          total=len(tasks),
+                          desc="Getting Timelines",
+                          dynamic_ncols=True,
+                          leave=False):
+            data = await task
+            outfile.write(json.dumps(data) + "\n")
 
 #-----------------------------------------------------------------------------------------------------
 
@@ -222,11 +221,10 @@ async def main():
         if data_type == 1: # Match Data
             await save_match_data_from_ids(session, match_ids, file_path)
         elif data_type == 2: # Timeline Data
-            print("[ERROR] NOT IMPLEMENTED")
-            pass
-            data = await get_timelines_from_ids(session, match_ids)
+            await save_timelines_from_ids(session, match_ids, file_path)
         elif data_type == 3: # Both
-            pass #! NOT IMPLEMENTED
+            await save_match_data_from_ids(session, match_ids, file_path)
+            await save_timelines_from_ids(session, match_ids, file_path)
             
     log_runtime(start_time)
 
