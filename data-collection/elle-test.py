@@ -4,8 +4,8 @@ import json
 from requesturls import match_ids_url, timeline_url
 from helpers import write_json_list
 
-puuid = "8V9lEwrGGZRAJcWLx4Z1etJzvkxUq97hhwvjOhpY1Qrv5ximuB3NTfQmCv9kupMloDcYY5bZj1Sy5Q"
-api_key = "RGAPI-cb5cfb17-a52b-4dc9-9b8f-c8dea6259f17"
+puuid = "puuid"
+api_key = "api"
 count = 1
 
 async def get_match_data(puuid, api_key, count):
