@@ -23,18 +23,40 @@ async def track_events(frames):
     total_kills = 0
     elite_monster = 0
     turrets_destroyed = 0
+    minion_kill = 0
+    items_purchased = 0
+    # difference between items destroyed vs items sold?
+    items_destroyed = 0
+    items_sold = 0
+    wards_placed = 0
+    # track if they're not prioritizing leveling the right ability
+    skill_level_up = 0
+    # track if they're hitting key levels like 6, 12, 18, etc. at expected times
+    level_up = 0
     for frame in frames:
         for event in frame['events']:
-          t = event['type']
-          # add meaningful events
-          if t == 'CHAMPION_KILL':
-            total_kills+=1
-          if t == 'ELITE_MONSTER_KILL':
-            elite_monster+=1
-          if t == 'BUILDING_KILL':
-            turrets_destroyed+=1
-          # add more events
-    return total_kills, elite_monster, turrets_destroyed
+            t = event['type']
+            # add meaningful events
+            if t == 'CHAMPION_KILL':
+                total_kills += 1
+            if t == 'ELITE_MONSTER_KILL':
+                elite_monster += 1
+            if t == 'BUILDING_KILL':
+                turrets_destroyed += 1
+            if t == 'ITEM_PURCHASED':
+                items_purchased += 1
+            if t == 'ITEM_DESTROYED':
+                items_destroyed += 1
+            if t == 'ITEM_SOLD':
+                items_sold += 1
+            if t == 'WARD_PLACED':
+                wards_placed += 1
+            if t == 'SKILL_LEVEL_UP':
+                skill_level_up += 1
+            if t == 'LEVEL_UP':
+                level_up += 1
+        return total_kills, elite_monster, turrets_destroyed, items_purchased, items_destroyed, items_sold,
+               wards_placed, skill_level_up, level_up
     
 async def test():
     match_data = await get_match_data(puuid, api_key, count)
