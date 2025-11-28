@@ -4,6 +4,10 @@ import json
 from requesturls import match_ids_url, timeline_url
 from helpers import write_json_list
 
+puuid = "your puuid here"
+api_key = "you api key here"
+count = 1
+
 async def get_match_data(puuid, api_key, count):
     match_ids = await match_ids_url(puuid, api_key, count)
     async with aiohttp.ClientSession() as session:
