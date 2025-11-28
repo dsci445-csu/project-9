@@ -13,6 +13,9 @@ async def get_match_data(puuid, api_key, count):
     async with aiohttp.ClientSession() as session:
         async with session.get(match_ids) as resp:
             match_ids = await resp.json()
+            if not match_ids:
+                print("Error: trouble accessing match data")
+                return None
             return match_ids
 
 async def get_timeline_data(match_id, api_key):
