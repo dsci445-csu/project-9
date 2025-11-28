@@ -4,23 +4,26 @@ import json
 from requesturls import match_ids_url, timeline_url
 from helpers import write_json_list
 
-puuid = "your puuid here"
-api_key = "you api key here"
+puuid = "8V9lEwrGGZRAJcWLx4Z1etJzvkxUq97hhwvjOhpY1Qrv5ximuB3NTfQmCv9kupMloDcYY5bZj1Sy5Q"
+api_key = "RGAPI-cb5cfb17-a52b-4dc9-9b8f-c8dea6259f17"
 count = 1
 
 async def get_match_data(puuid, api_key, count):
     match_ids = await match_ids_url(puuid, api_key, count)
     async with aiohttp.ClientSession() as session:
-     async with session.get(match_ids) as resp:
-        match_ids = await resp.json()
-         return match_ids
+        async with session.get(match_ids) as resp:
+            match_ids = await resp.json()
+            return match_ids
 
 async def get_timeline_data(match_id, api_key):
-    timeline_url = await timeline_url(match_ids[0], api_key)
+    timel_url = await timeline_url(match_id, api_key)
     async with aiohttp.ClientSession() as session:
-     async with session.get(timeline_url) as resp:
-        timeline = await resp.json()
-         return timeline
+        async with session.get(timel_url) as resp:
+            timeline = await resp.json()
+            if not timeline:
+                print("Error: trouble accessing timeline data")
+                return None
+            return timeline
 
 async def track_events(frames):
     # track meaningful events
@@ -59,21 +62,31 @@ async def track_events(frames):
                 skill_level_up += 1
             if t == 'LEVEL_UP':
                 level_up += 1
-        return total_kills, elite_monster, turrets_destroyed, items_purchased, items_destroyed, items_sold,
-               wards_placed, skill_level_up, level_up
+    return total_kills, elite_monster, turrets_destroyed, items_purchased, items_destroyed, items_sold, wards_placed, skill_level_up, level_up
     
 async def test():
     match_data = await get_match_data(puuid, api_key, count)
+    if not match_data:
+        print("Error: no match data found")
+    match_id = match_data[0]
     timeline_data = await get_timeline_data(match_id, api_key)
-    
     frames = timeline_data['info']['frames']
     # info -> frames -> events -> timestamp
-    if frames[-1]['timestamp'] < 15*60000: # filter games less than 15 minutes
+    if frames[-1]['timestamp'] < 15 * 60000: # filter games less than 15 minutes
       print("Skip matches less than 15 minutes")
+      return None
     else:
+      # call track_events with frames to print events
+      total_kills, elite_monster, turrets_destroyed, items_purchased, items_destroyed,items_sold, wards_placed, skill_level_up, level_up = await track_events(frames)
       print(f"Total kills: {total_kills}")
       print(f"Total elite monsters killed: {elite_monster}")
       print(f"Total turrets destroyed: {turrets_destroyed}")
-final = .run(test())
-print(json.dumps(final,indent=2))          
+      print(f"Items purchased: {items_purchased}")
+      print(f"Items destroyed: {items_destroyed}")
+      print(f"Items sold: {items_sold}")
+      print(f"Wards placed: {wards_placed}")
+      print(f"Skill level up: {skill_level_up}")
+      print(f"Total level ups: {level_up}")
+final = asyncio.run(test())
+print(json.dumps(final, indent = 2))     
       
