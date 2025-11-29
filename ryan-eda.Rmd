@@ -1,0 +1,12 @@
+---
+title: "ryan-eda"
+output: html_document
+---
+
+```{r}
+d2_250 <- read.csv("data/d2_250_pwdw.csv")
+
+fit <- lm(win ~ wards + duration, data=d2_250)
+summary(fit)
+
+```
