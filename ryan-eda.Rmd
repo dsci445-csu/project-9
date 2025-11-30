@@ -3,10 +3,35 @@ title: "ryan-eda"
 output: html_document
 ---
 
+## 1.1: Interaction Testing
+The `d2_250_pwdw.csv` file is imported from the python EDA. Doing interactions in python is painful so here I am testing whether the interaction between wards and position is meaningful
+
 ```{r}
-d2_250 <- read.csv("data/d2_250_pwdw.csv")
-
-fit <- lm(win ~ wards + duration, data=d2_250)
-summary(fit)
-
+df <- read.csv("data/d2_250_pwdw.csv")
+df$win <- df$win == "True"
 ```
+
+```{r}
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+train <- df[index, ]
+test <- df[-index, ]
+```
+
+```{r}
+fit_basic <- lm(win ~ wards + position  + duration, data=train)
+fit_interact <- lm(win ~ wards * position + duration, data=train)
+
+pred_basic <- predict(fit_basic, newdata=test)
+pred_interact <- predict(fit_interact, newdata=test)
+
+mse_basic <- mean((test$win - pred_basic) ^ 2)
+mse_interact <- mean((test$win - pred_interact) ^ 2)
+
+print(c(mse_basic, mse_interact))
+```
+
+It's safe to conclude that interactions between ward and positions do not provide a meaningful difference.
+
+## 1.2:
