@@ -29,9 +29,48 @@ pred_interact <- predict(fit_interact, newdata=test)
 mse_basic <- mean((test$win - pred_basic) ^ 2)
 mse_interact <- mean((test$win - pred_interact) ^ 2)
 
-print(c(mse_basic, mse_interact))
+print(c(mse_basic, mse_interact, var(test$win)))
 ```
 
 It's safe to conclude that interactions between ward and positions do not provide a meaningful difference.
 
 ## 1.2:
+Time to add more predictors
+
+```{r}
+df <- read.csv("data/d2_250_big.csv")
+df$win <- df$win == "True"
+```
+
+```{r}
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+train <- df[index, ]
+test <- df[-index, ]
+```
+
+```{r}
+fit_big <- lm(win ~ . - turretsLost - turretTakedowns, data=train)
+pred_big <- predict(fit_big, newdata=test)
+mse_big <- mean((test$win - pred_big)^2)
+mse_big
+summary(fit_big)
+```
+
+```{r}
+fit_reduced <- lm(win ~ cctime, data = train)
+pred_reduced <- predict(fit_reduced, newdata=test)
+mse_reduced <- mean((test$win - pred_reduced)^2)
+mse_reduced
+var(test$win)
+```
+
+My conclusion here is that pure playstyle predictors (pings, wards) are overall poor predictors of win. Performance-based predictors like turret takedowns or cctime are good predictors but are obviously correlated with the win through confounding factors like the gold they provide and the fact that already winning teams are going to have an easier time taking turrets.
+
+I'm not sure exactly how to use this model to analyze a specific game yet either.
+
+As a result, I think that I want to try these things in order:
+1) Using the model to provide feedback on a specific game.
+2) Fitting non-linear models to see if they can make sense of things better
+3) Trying to focus on performance-based metrics to provide feedback (IE: "your CS is bad" or "you die too much")
