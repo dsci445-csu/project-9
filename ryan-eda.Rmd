@@ -51,7 +51,7 @@ test <- df[-index, ]
 ```
 
 ```{r}
-fit_big <- lm(win ~ . - turretsLost - turretTakedowns, data=train)
+fit_big <- lm(win ~ ., data=train)
 pred_big <- predict(fit_big, newdata=test)
 mse_big <- mean((test$win - pred_big)^2)
 mse_big
@@ -59,7 +59,7 @@ summary(fit_big)
 ```
 
 ```{r}
-fit_reduced <- lm(win ~ cctime, data = train)
+fit_reduced <- lm(win ~ ., data = train)
 pred_reduced <- predict(fit_reduced, newdata=test)
 mse_reduced <- mean((test$win - pred_reduced)^2)
 mse_reduced
@@ -74,3 +74,27 @@ As a result, I think that I want to try these things in order:
 1) Using the model to provide feedback on a specific game.
 2) Fitting non-linear models to see if they can make sense of things better
 3) Trying to focus on performance-based metrics to provide feedback (IE: "your CS is bad" or "you die too much")
+
+
+## 1.3:
+
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df$win <- df$win == "True"
+```
+
+```{r}
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+train <- df[index, ]
+test <- df[-index, ]
+```
+
+```{r}
+fit_big <- lm(win ~ ., data=train)
+pred_big <- predict(fit_big, newdata=test)
+mse_big <- mean((test$win - pred_big)^2)
+mse_big
+summary(fit_big)
+```
