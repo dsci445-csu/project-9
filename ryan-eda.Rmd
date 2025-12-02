@@ -4,7 +4,7 @@ output: html_document
 ---
 
 ## 1.1: Interaction Testing
-The `d2_250_pwdw.csv` file is imported from the python EDA. Doing interactions in python is painful so here I am testing whether the interaction between wards and position is meaningful
+The `d2_250_pwdw.csv` file is imported from the python EDA. Doing interactions in python is painful so here I am testing whether the interaction between wards and position is meaningful. I want to initially do this with a linear model and move out from there.
 
 ```{r}
 df <- read.csv("data/d2_250_pwdw.csv")
@@ -32,7 +32,7 @@ mse_interact <- mean((test$win - pred_interact) ^ 2)
 print(c(mse_basic, mse_interact, var(test$win)))
 ```
 
-It's safe to conclude that interactions between ward and positions do not provide a meaningful difference.
+It's safe to conclude that linear interactions between ward and positions do not provide a meaningful difference.
 
 ## 1.2:
 Time to add more predictors
@@ -81,6 +81,7 @@ As a result, I think that I want to try these things in order:
 ```{r}
 df <- read.csv("data/d2_250_performance.csv")
 df$win <- df$win == "True"
+#df <- df[df$lane != "NONE"]
 ```
 
 ```{r}
@@ -92,9 +93,62 @@ test <- df[-index, ]
 ```
 
 ```{r}
-fit_big <- lm(win ~ ., data=train)
+colnames(df)
+```
+
+```{r}
+fit_big <- lm(win ~ goldEarned * lane, data=train)
 pred_big <- predict(fit_big, newdata=test)
 mse_big <- mean((test$win - pred_big)^2)
 mse_big
 summary(fit_big)
 ```
+
+## 1.4:
+SVM, random forest, splines
+
+```{r}
+library(tidymodels)
+```
+
+```{r}
+colnames(df)
+```
+
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df <- df[df$lane != "NONE", ]
+df$position = NULL
+df$win <- factor(df$win)
+df$lane <- factor(df$lane)
+```
+
+```{r}
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+train <- df[index, ]
+test <- df[-index, ]
+```
+
+```{r}
+rf_spec <- rand_forest(
+  mtry= 5,
+  trees = 500,
+  min_n = 5,
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "impurity")
+
+rf <- fit(rf_spec, win ~ ., data=train)
+```
+
+```{r}
+pred <- predict(rf, new_data=test, type="class")
+eval_df <- bind_cols(test, pred)
+accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+```
+
+
+
+
