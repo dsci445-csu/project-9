@@ -1,9 +1,9 @@
 ### DATA FILES 
 ### THIS MAY NEED TO BE REMOVED FROM THE GITIGNORE IN THE FUTURE IF GIT LFS WORKS
 ### CURRENTLY REQUIRED DUE TO HOW DISTRIBUTED VCS WORKS
-.jsonl
-.json
-.csv
+*.jsonl
+*.json
+*.csv
 
 # History files
 .Rhistory
