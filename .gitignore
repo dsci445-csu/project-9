@@ -5,6 +5,10 @@
 *.json
 *.csv
 
+### This is for presentations made by .Rmd and .py files
+*.pptx
+*.html
+
 # History files
 .Rhistory
 .Rapp.history
