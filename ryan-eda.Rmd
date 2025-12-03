@@ -105,10 +105,11 @@ summary(fit_big)
 ```
 
 ## 1.4:
-SVM, random forest, splines
+Let's fit a random forest model
 
 ```{r}
 library(tidymodels)
+library(tibble)
 ```
 
 ```{r}
@@ -120,34 +121,74 @@ df <- read.csv("data/d2_250_performance.csv")
 df <- df[df$lane != "NONE", ]
 df$position = NULL
 df$win <- factor(df$win)
-df$lane <- factor(df$lane)
+X <- model.matrix(win ~ . - 1, data=df)
+X <- as.data.frame(X)
+y <- df$win
 ```
 
 ```{r}
 set.seed(67)
 nrow <- nrow(df)
 index <- sample(1:nrow, size = nrow * 0.7)
-train <- df[index, ]
-test <- df[-index, ]
+X_train <- X[index, ]
+y_train <- y[index]
+X_test <- X[-index, ]
+y_test <- y[-index]
 ```
 
 ```{r}
-rf_spec <- rand_forest(
+rf <- rand_forest(
   mtry= 5,
   trees = 500,
   min_n = 5,
 ) %>%
   set_mode("classification") %>%
-  set_engine("ranger", importance = "impurity")
-
-rf <- fit(rf_spec, win ~ ., data=train)
+  set_engine("ranger", importance = "impurity") %>%
+  fit_xy(X_train, y_train)
 ```
 
 ```{r}
-pred <- predict(rf, new_data=test, type="class")
-eval_df <- bind_cols(test, pred)
+pred <- predict(rf, new_data=X_test, type="class")
+
+eval_df <- tibble(
+  win = y_test,
+  .pred_class = pred$.pred_class
+)
+
 accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
 ```
+## 1.4.5:
+Let's use SHAP to evaluate gameplay based on our random forest model.
+
+```{r}
+library(fastshap)
+```
+
+Okay let's take a random match:
+```{r}
+example_index <- 20
+example <- X_test[example_index, ]
+print(y_test[example_index])
+print(paste("Deaths: ", example$deaths))
+```
+Looks like this game was a loss. The player also had 7 deaths (which is a lot and deaths are obviously not good!) So perhaps this contributed to the outcome.
+
+```{r}
+predict_fn <- function(object, newdata){
+    predict(object, new_data = newdata, type = "prob")$.pred_True
+}
+```
+
+```{r}
+set.seed(67)
+
+testexplain <- fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=example, nsim=1000,adjust=TRUE)
+testexplain
+```
+This is a bunch of explanation of what contributed to this particular game. So we can see that deaths reduced the predicted win chance by 0.02 (the adjust setting makes this an actual probability). Turrets lost, however, accounted for an overwhelming majority of the problem.
+
+## 1.5:
+Let's fit a `glm` model using logistic regression.
 
 
 
