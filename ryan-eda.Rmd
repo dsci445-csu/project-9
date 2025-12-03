@@ -113,10 +113,6 @@ library(tibble)
 ```
 
 ```{r}
-colnames(df)
-```
-
-```{r}
 df <- read.csv("data/d2_250_performance.csv")
 df <- df[df$lane != "NONE", ]
 df$position = NULL
@@ -191,10 +187,86 @@ Next, since the turretslost stat is so closely tied to winning/losing and perhap
 
 ## 1.6:
 RF without turrets lost.
+```{r}
+library(fastshap)
+library(tidymodels)
+library(tibble)
+```
+
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+X <- model.matrix(win ~ . - 1, data=df)
+X <- as.data.frame(X)
+y <- df$win
+
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[index, ]
+y_train <- y[index]
+X_test <- X[-index, ]
+y_test <- y[-index]
+```
+
+```{r}
+rf <- rand_forest(
+  mtry= 5,
+  trees = 500,
+  min_n = 5,
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "impurity") %>%
+  fit_xy(X_train, y_train)
+
+pred <- predict(rf, new_data=X_test, type="class")
+
+eval_df <- tibble(
+  win = y_test,
+  .pred_class = pred$.pred_class
+)
+
+accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+```
+
+```{r}
+predict_fn <- function(object, newdata){
+    predict(object, new_data = newdata, type = "prob")$.pred_True
+}
+```
+
+```{r}
+example_index <- 50
+example <- X_test[example_index, ]
+
+predict(rf, new_data=example, type="prob")$.pred_True
+```
+```{r}
+example
+```
+
+```{r}
+set.seed(67)
+
+testexplain <- fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=example, nsim=1000,adjust=TRUE)
+testexplain[1, ]
+```
 
 ## 1.7:
 Let's fit a `glm` model using logistic regression.
 
+## 1.8:
+Fit a `rf` model using created statistics. (e.g. $UtilityScore=wardsPlaced+totalPings*0.1$)
 
+## 1.9:
+Pick the best SHAP model and make a dataframe containing the SHAP explanations for the dataset. 
+We can then use this to figure out variance and what variables are often explaining the choices.
+
+## Remaining Plan:
+Find a way to extract the top 3 positive and top 3 negative contributors from a given match, then map these to feedback we can give the player. (e.g. Deaths was -0.18, so we can give advice that they die too much)
 
 
