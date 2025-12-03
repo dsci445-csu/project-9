@@ -258,6 +258,55 @@ testexplain[1, ]
 
 ## 1.7:
 Let's fit a `glm` model using logistic regression.
+```{r, echo=FALSE}
+library(parsnip)
+library(tidymodels)
+library(fastshap)
+```
+
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df$win <- as.integer(df$win == "True")
+```
+
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+X <- model.matrix(win ~ . - 1, data=df)
+X <- as.data.frame(X)
+y <- df$win
+
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[index, ]
+y_train <- y[index]
+X_test <- X[-index, ]
+y_test <- y[-index]
+
+glm <- 
+  logistic_reg() %>%
+  set_engine("glm", family=binomial()) %>%
+  fit_xy(x = X_train, y = y_train)
+```
+
+```{r}
+glm_pred <- predict(glm, new_data = X_test, type="prob")[[".pred_True"]]
+glm_pred_class <- ifelse(glm_pred > 0.5, "True", "False")
+glm_pred_class <- factor(glm_pred_class, levels = levels(y_test))
+print(paste("GLM Test Accuracy: ",mean(glm_pred_class == y_test)))
+```
+This accuracy is slightly better than that of the RF.
+
+```{r}
+
+```
+
+
 
 ## 1.8:
 Fit a `rf` model using created statistics. (e.g. $UtilityScore=wardsPlaced+totalPings*0.1$)
