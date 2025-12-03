@@ -34,7 +34,7 @@ print(c(mse_basic, mse_interact, var(test$win)))
 
 It's safe to conclude that linear interactions between ward and positions do not provide a meaningful difference.
 
-## 1.2:
+## 1.2: Big LM
 Time to add more predictors
 
 ```{r}
@@ -76,7 +76,7 @@ As a result, I think that I want to try these things in order:
 3) Trying to focus on performance-based metrics to provide feedback (IE: "your CS is bad" or "you die too much")
 
 
-## 1.3:
+## 1.3: Performance LM
 
 ```{r}
 df <- read.csv("data/d2_250_performance.csv")
@@ -104,7 +104,7 @@ mse_big
 summary(fit_big)
 ```
 
-## 1.4:
+## 1.4: RF
 Let's fit a random forest model
 
 ```{r}
@@ -157,7 +157,7 @@ eval_df <- tibble(
 
 accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
 ```
-## 1.4.5:
+## 1.5: SHAP
 Let's use SHAP to evaluate gameplay based on our random forest model.
 
 ```{r}
@@ -187,7 +187,12 @@ testexplain
 ```
 This is a bunch of explanation of what contributed to this particular game. So we can see that deaths reduced the predicted win chance by 0.02 (the adjust setting makes this an actual probability). Turrets lost, however, accounted for an overwhelming majority of the problem.
 
-## 1.5:
+Next, since the turretslost stat is so closely tied to winning/losing and perhaps doesnt even account well for individual performance, I want to fit a random forest model that does not include this predictor.
+
+## 1.6:
+RF without turrets lost.
+
+## 1.7:
 Let's fit a `glm` model using logistic regression.
 
 
