@@ -101,3 +101,25 @@ def unpack(df):
             })
 
     return pd.DataFrame(rows)
+
+
+if __name__ == "__main__":
+    print("Running matchcleaner.py\n> Combines and cleans a pair of corresponding timelines and match data, outputting to a .csv\n> " \
+        "For best usage, get data from `python ryan-collector.py` with return type = 'Both'")
+
+    timelines_path = input("Enter path to timelines data (Press [ENTER] for default): ")
+    matches_path = input("Enter path to matches data (Press [ENTER] for default): ")
+    output_path = input("Enter output path (Press [ENTER] for default): ")
+
+    if timelines_path == "":
+        timelines_path = "data/d2_250_1_timelines.jsonl"
+    if matches_path == "":
+        matches_path = "data/d2_250_1_matches.jsonl"
+    if output_path == "":
+        output_path = "data/d2_250_performance"
+
+    df = mergeclean(timelines_path, matches_path)
+    df = unpack(df)
+    df = df.drop(columns="champion")
+    df.to_csv(output_path+".csv", index=False)
+    print(f"output successfully to: {output_path}")
