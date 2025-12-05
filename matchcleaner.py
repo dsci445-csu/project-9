@@ -112,9 +112,9 @@ if __name__ == "__main__":
     output_path = input("Enter output path (Press [ENTER] for default): ")
 
     if timelines_path == "":
-        timelines_path = "data/d2_250_1_timelines.jsonl"
+        timelines_path = "/workspaces/project-9/sample_data/sample_data/d2_250_1_timelines.jsonl"
     if matches_path == "":
-        matches_path = "data/d2_250_1_matches.jsonl"
+        matches_path = "/workspaces/project-9/sample_data/sample_data/d2_250_1_matches.jsonl"
     if output_path == "":
         output_path = "data/d2_250_performance"
 
