@@ -17,6 +17,11 @@ output:
 </div>
 ## 1. Introduction
 
+The game being focused on for this project is League of Legends, a complex, competitive 5v5 multiplayer online battle arena (MOBA) game. The company that created League of Legends, Riot Games, provides high-quality data through its API, gaining access to game data such as player performance and objectives. While there are existing websites to track player statistics such as match history and specific counter pick options, they mainly focus on surface-level statistics and outcomes, not how one’s decisions can influence the result of the game.
+
+The main focus of this project is to analyze and interpret player behavior and decision-making to determine how these patterns may impact the outcome of the game. By examining factors such as participation levels, whether their team had more objectives, and experience/gold levels over the course of the game, key behavioral patterns and the player’s impact on the game can be interpreted and identified.
+
+
 ## 2. Methods
 
 ## 2.1 Data
