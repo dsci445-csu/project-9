@@ -11,9 +11,9 @@ output:
 
 ## Abstract
 <div class="abstract">
-  This study develops an integrated machine-learning framework to generate actionable, model-agnostic feedback on League of Legends match performance. Using a dataset of player- and team-level game metrics, three supervised learning algorithms—random forests, multiple linear regression, and support vector machines—are trained to predict key performance outcomes. Model outputs are unified through a comparative ensemble analysis to improve predictive robustness across heterogeneous feature–outcome relationships. SHAP values are then applied within R to derive consistent, locally accurate explanations of each model’s predictions. 
+  This project assesses multiple different ML approaches (GLM, SVM, RF) to create stable models across multiple cross validation folds that inform over 75% predictive success on our sample data.[Elaborate on results]
   
-  These explanations highlight the game variables that most strongly influence performance and identify player behaviors with the greatest potential impact on match results. The combined approach demonstrates that integrating complementary models with SHAP-based interpretation yields both high predictive accuracy and interpretable, targeted feedback suitable for player development and strategic decision-making.
+  
 </div>
 ## 1. Introduction
 
@@ -51,7 +51,7 @@ kable(
 
 
 ## 2.2 Preprocessing
-The Riot Games developer API returns a highly nested sequence of DTOs (Data Transfer Objects). These structures contain match-level, team-level, and participant-level data embedded within multiple hierarchical layers, requiring systematic extraction and normalization before modeling. All raw JSON responses were flattened into tabular form by isolating the relevant participant objects and merging them with corresponding match metadata. To accomplish this, data was cleaned using a python script.
+The Riot Games developer API returns a highly nested sequence of DTOs (Data Transfer Objects). These structures contain match level, team level, as well as player level level data embedded within multiple, tightly coupled transfer layers, requiring complicated extraction before modeling. All desired JSON responses were flattened into a simpler form by isolating the relevant participant objects and merging them with corresponding match metadata. To accomplish this, data was cleaned using a python script.
 
 ## 2.3 Model Evaluation
 Three primary models were fit to the small dataset in order to determine an optimal strategy. Models were evaluated with a 70/30 train/test split and 5-fold cv was used to find optimal hyperparameter tunings.
@@ -192,9 +192,9 @@ On the other hand, first blood-related statistics were commonly ranked lowest fo
 
 ## 4. Conclusion
 
-This study demonstrates the feasibility and value of integrating multiple machine learning models with SHAP-based interpretability to produce actionable insights about League of Legends match outcomes. Despite operating on a limited dataset drawn from high level Diamond-ranked play, all three models achieved strong predictive accuracy, with GLM marginally outperforming alternatives but the SVM model only trailing slightly despite roughly 25% of the total predictors. More importantly, SHAP provided a robust mechanism for translating model outputs into practical strategic guidance, identifying deaths, gold generation, kills, and vision control as the most influential and consistent determinants of match success. 
+This project demonstrates a pipeline and plausible solution for integrating SHAP and machine learning maodels to create interpretable, actionable insights about League of Legends match wins. WOrking with a high-level dataset, all three models got high predictive accuracy (even when compared to similar projects in the same area). Vitally, SHAP provided a highly detailed and robust vision of the key parts of the dataset, identifying gold, kills, deaths, vision control and infulential factors and first blood statistics as non-influential. 
 
-The combined framework offers a scalable foundation for future analytical systems that aim to support competitive teams, automated coaching tools, or personalized player improvement platforms. Expanding the dataset, incorporating temporal modeling of in-game dynamics (making better use of the timelines data), and extending analysis to champion-specific or role-specific behaviors are promising options for application development.
+The hope is that the work done in this project can help form a foundation for future market-targeted platforms such as analytical systems to support competitive teams in esports, automated coaching for players, or personalized platforms such as the already existent mobalytics.gg. 
 
 ## References
 
