@@ -1,0 +1,83 @@
+---
+title: "DSCI 445 Final Slidshow"
+author: "By Nick Li, Ryan Stevens, Elle Isabel Angell, Coleman Garnier"
+output:
+  ioslides_presentation:
+    widescreen: true
+    incremental: false
+---
+
+# Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
+
+
+*Use different ML approaches to predict game outcome*
+
+
+# Slide 2
+
+*(empty — add content here)*
+
+
+# Slide 3
+
+*(empty — add content here)*
+
+
+# Slide 4
+
+*(empty — add content here)*
+
+
+# Slide 5
+
+*(empty — add content here)*
+
+
+# Slide 6
+
+*(empty — add content here)*
+
+
+# Slide 7
+
+*(empty — add content here)*
+
+
+# Slide 8
+
+*(empty — add content here)*
+
+
+# Slide 9
+
+*(empty — add content here)*
+
+
+# Slide 10
+
+*(empty — add content here)*
+
+
+# Slide 11
+
+*(empty — add content here)*
+
+
+# Slide 12
+
+*(empty — add content here)*
+
+
+# Slide 13
+
+*(empty — add content here)*
+
+
+# Slide 14
+
+*(empty — add content here)*
+
+
+# Slide 15
+
+*(empty — add content here)*
