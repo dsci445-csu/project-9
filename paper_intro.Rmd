@@ -1,0 +1,136 @@
+---
+title: "DSCI445 Paper Draft"
+author: "Elle Angell"
+output: html_document
+---
+
+## Introduction
+
+League of Legends is a massively popular online game where players can compete to
+increase their matchmaking rating. The game is typically played as a 5v5 format where
+each player picks a “Champion” to control out of a pool of ~170 total options. This
+is called “Drafting”. Different champions have different strengths and weaknesses and
+circumstances in which they are effective. So, choosing a good option is critical for
+a player’s chances at winning the game. In response to this, the use of websites like
+u.gg, op.gg, and even lolalytics.com has become a widespread practice to gain an edgeover
+opponents, with millions of daily users.
+
+However, these websites have a critical weakness. If you see the enemy team has chosen
+“Malphite” as one of their champions, u.gg will tell you that “Sylas” is a good response.
+While this is correct in a vacuum, u.gg fails to account for the rest of the game state. If
+the enemy team has also selected “Udyr” and “Corki”, the effectiveness of “Sylas” will go
+down but u.gg will not account for it.
+
+By training a statistical model that analyzes the entire set of champion picks, we can offer
+superior solutions to drafting situations.
+
+## Datasets
+Riot API Endpoints:
+    https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}
+    https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline?api_key={api_key}
+
+The Riot Games match data provides information about a specific match including information like 
+who participated, who won, what champions did they play, and other important statistics.
+The Riot Games timeline data
+
+```{r}
+# load packages
+library(dplyr)
+library(ggplot2)
+library(fastshap)
+library(tidymodels)
+library(tibble)
+```
+
+# RF
+```{r}
+df <- read.csv("data/d2_250_performance.csv")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+X <- model.matrix(win ~ . - 1, data=df)
+X <- as.data.frame(X)
+y <- df$win
+
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[index, ]
+y_train <- y[index]
+X_test <- X[-index, ]
+y_test <- y[-index]
+```
+
+```{r}
+rf <- rand_forest(
+  mtry= 5,
+  trees = 500,
+  min_n = 5,
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "impurity") %>%
+  fit_xy(X_train, y_train)
+
+pred <- predict(rf, new_data=X_test, type="class")
+
+eval_df <- tibble(
+  win = y_test,
+  .pred_class = pred$.pred_class
+)
+
+accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+```
+
+```{r}
+predict_fn <- function(object, newdata){
+    predict(object, new_data = newdata, type = "prob")$.pred_True
+}
+```
+
+```{r}
+example_index <- 50
+example <- X_test[example_index, ]
+
+predict(rf, new_data=example, type="prob")$.pred_True
+```
+```{r}
+example
+```
+
+```{r}
+set.seed(67)
+
+testexplain <- fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=example, nsim=1000,adjust=TRUE)
+testexplain[1, ]
+```
+
+```{r}
+rf_df <-data.frame(
+    # comparing on graph
+    kills = X_test$kills,
+    deaths = X_test$deaths,
+    win = y_test,
+    # prediction 
+    shap_kills = testexplain$kills,
+    shap_deaths = testexplain$deaths,
+) 
+```
+
+```{r}
+# graph with kills on x-axis, deaths on y-axis
+# with w/l color coded
+ggplot(rf_df, aes(x = kills, y = deaths, color = win)) +
+  # size of point is based on how significant it is to model
+  geom_point(aes(size = abs(shap_kills + shap_deaths)), alpha = 0.5) +
+  # manually set colors 
+  scale_color_manual(values = c("True" = "green", "False" = "red")) +
+  labs(
+    title = "Kills and Deaths Impact on Match Outcome", 
+    x = "Kills",
+    y = "Deaths", 
+    color = "W/L" 
+  )
+```
+
