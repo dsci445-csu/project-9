@@ -9,24 +9,40 @@ output:
 
 # Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
 
+## Research Questions:
+1. Which data best accounts for the outcome of a specific match?
+2. Is it possible to provide meaningful feedback to a player on a game using a model?
 
-*Use different ML approaches to predict game outcome*
+## Data Overview:
+* Gathered from the Riot Games Developer API
+* First party source
+* Highly nested
 
+## Our Data:
+* 'Small' Dataset n=250 matches (2,500 players)
+* 'Medium' Dataset n=5,000 matches (50,000 players)
+* 'Large' Dataset n=50,000 (n=500,000 players)
 
-# Slide 2
+## Data Features:
+* Binary classification problem (win/loss)
+*talk about the sort of features we have*
 
-*(empty — add content here)*
+## Gold and Wins:
+*graph about gold vs duration colored by win*
 
+## Turrets:
+*image to illustrate why they are important*
+*graph about turrets lost and turret takedowns vs win*
+*this is why we removed them from the data*
 
-# Slide 3
+## The Research:
+Nonlinear Models Dominate:
+* Gonzalez, 2023, Deep Neural Network: 89.8%
+* Zamir et al., 2024, RNN: 86.7%
+* Silva et al., 2023, RNN: 73% (at 15m)
+* Chen et al., 2021, Log. Regression: 60.24%
 
-*(empty — add content here)*
-
-
-# Slide 4
-
-*(empty — add content here)*
-
+## 
 
 # Slide 5
 
