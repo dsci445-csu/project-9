@@ -20,7 +20,6 @@ output:
 ***
 
 ## Research Questions:
-The main questions we want to answer through this project are:
 1. Which data best accounts for the outcome of a specific match?
 2. Is it possible to provide meaningful feedback to a player on a game using a model?
 
@@ -47,20 +46,67 @@ The main questions we want to answer through this project are:
 ## Fitting an SVM
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-install.packages("tidyr")
-library(jsonlite) # imports json into df
+install.packages("tidymodels")
+library(e1071)
 library(dplyr)
 library(tidyr)
-
-# df <- read.csv("/workspaces/project-9/sample_data/sample_data/performance.csv")
+library(tibble)
+library(tidymodels)
+```
+```{r}
+df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
-X <- select(merged_data, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
+# X <- select(df, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
 # convert first blood kill and assist to int
+# https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
 X <- df %>%
-mutate(X$firstbloodKill = as.numeric(X$firstbloodKill), 
-X$firstbloodAssist = as.numeric(X$firstbloodAssist))
+select(deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills) %>% 
+mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
+       firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
 
 # python
 # target = outcome of game
- y = as.numeric(df$win)
+y <- as.factor(df$win)
+```
+```{r}
+set.seed(67)
+# split into training and test sets (70 train 30 test)
+nrow <- nrow(df)
+split_data <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[split_data, ]
+y_train <- y[split_data]
+X_test <- X[-split_data, ]
+y_test <- y[-split_data]
+
+# scaling X
+# https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
+X_train_scaled = scale(X_train)
+X_test_scaled = scale(X_test, center = attr(X_train_scaled, "scaled:center"), scale = attr(X_train_scaled, "scaled:scale"))
+
+# convert to df to train on svm
+df_train <- data.frame(y = factor(y_train), X_train_scaled)
+df_test <- data.frame(X_test_scaled)
+
+# train svm
+svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
+y_pred <- predict(svm_model, newdata = df_test)
+
+eval_df <- tibble(
+    win = factor(y_test),
+    .pred_class = factor(y_pred)
+)
+
+svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+cat("SVM Accuracy: ", sprintf("%1.2f", svm_accuracy))
+
+# confusion matrix to check accuracy
+conf_matrix <- table(predicted = y_pred, actual = y_test)
+print("Confusion Matrix: ")
+print(conf_matrix)
+
+misclass_rate <- mean(y_pred != y_test) * 100
+cat("Misclassification Rate: ", sprintf("%1.2f", misclass_rate))
+```
+```{r}
+# graph
 ```
