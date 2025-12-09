@@ -1,0 +1,66 @@
+---
+title: "DSCI 445 Final Slideshow"
+author: "By Nick Li, Ryan Stevens, Elle Angell, Coleman Garnier"
+output:
+  ioslides_presentation:
+    widescreen: true
+    incremental: false
+---
+
+# Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
+
+## Motivation:
+League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game. The company that created League of Legends, Riot Games, provides public high-quality data through its API, gaining access to game data such as player performance and objectives.
+
+Websites already exist where you can track player statistics such as match history and specific counter pick options, they mainly focus on their surface-level information, not how one's decisions can affect the result of the game.
+
+The main focus is to analyze and interpret player behavior to determine how these patterns influence the outcome of the game. Factors such as key behavioral patterns, player participation, whether their team had more objectives, and experience/gold levels over the course of the game can be interpreted and identified.   
+
+***
+
+## Research Questions:
+The main questions we want to answer through this project are:
+
+1. Which data best accounts for the outcome of a specific match?
+
+2. Is it possible to provide meaningful feedback to a player on a game using a model?
+
+## Data Overview:
+All data was gathered through the Riot games developer API on patch 25.22, November 1st through 3rd, 2025 by using a python data collector that collected corresponding game data from two different api endpoints.
+
+* 1st Endpoint: Riot Match Data
+    * Composed of end-of-game summary statistics:
+        * Which team won the game, the characters played, the ending gold quantity for each team, etc.
+
+* 2nd Endpoint: Riot Timelines Data
+    * Includes snapshots of the game in one-minute intervals throughout the match including:
+        * Location and inventory of each player, etc.
+
+The datasets used are highly nested, so proper extraction must be taken into consideration.
+
+All data was collected from games where the average matching of participating players was 'Diamond II', which consists of players in the top 1.5% of skill.
+    * Focuses on high-quality   
+
+## Out Data:
+
+
+## Fitting an SVM
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+install.packages("tidyr")
+library(jsonlite) # imports json into df
+library(dplyr)
+library(tidyr)
+
+df <- read.csv("/workspaces/project-9/sample_data/sample_data/performance.csv")
+# predictors
+X <- select(merged_data, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
+# convert first blood kill and assist to int
+X <- df %>%
+mutate(X$firstbloodKill = as.numeric(X$firstbloodKill), 
+X$firstbloodAssist = as.numeric(X$firstbloodAssist))
+X['firstBloodKill'] = df[['firstBloodKill']].astype(int)
+X['firstBloodAssist'] = df[['firstBloodAssist']].astype(int)
+# target = outcome of game
+y = df[['win']].astype(int)
+```
