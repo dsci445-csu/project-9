@@ -68,7 +68,30 @@ Nonlinear Models Dominate:
 ## SHAP Real Example
 *feed the model a game one of us played*
 
-## Conclusions
+# Result
+
+- GLM achieved **75.1%** accuracy  
+- Random Forest: **74.7%** accuracy
+- SVM: **73.5%** accuracy  
+- Consistent top predictors: **deaths**, **goldEarned**  
+- Lowest predictors: **first blood–related stats**
+- ***graph???
+
+# Discussion
+
+- **GoldEarned** → leads to item power → greater access to victory conditions  
+- **Deaths** → enemy gold + **loss of tempo** (6–56 seconds downtime)  
+- First blood metrics → minimal long-term predictive value  
+
+
+# Conclusion
+
+- Pipeline integrates **ML models + SHAP** for interpretable insights  
+- High predictive performance across all three models  
+- Influential factors: **gold**, **kills**, **deaths**, **vision control**  
+- First blood → not influential  
+
+- Supports esports analytics, automated coaching, personalized tools
 
 ## Future Work
 
