@@ -9,6 +9,9 @@ output:
 
 # Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
 
+## Motivation:
+*lol is big game...*
+
 ## Research Questions:
 1. Which data best accounts for the outcome of a specific match?
 2. Is it possible to provide meaningful feedback to a player on a game using a model?
@@ -22,6 +25,11 @@ output:
 * 'Small' Dataset n=250 matches (2,500 players)
 * 'Medium' Dataset n=5,000 matches (50,000 players)
 * 'Large' Dataset n=50,000 (n=500,000 players)
+
+## Timelines vs Matches:
+* Timelines data is mostly superior
+* Matches data had better performance on preliminary testing
+* In the future...
 
 ## Data Features:
 * Binary classification problem (win/loss)
@@ -42,58 +50,27 @@ Nonlinear Models Dominate:
 * Silva et al., 2023, RNN: 73% (at 15m)
 * Chen et al., 2021, Log. Regression: 60.24%
 
-## 
+## Fitting a GLM
 
-# Slide 5
+## Fitting an SVM
 
-*(empty — add content here)*
+## FItting a Random Forest
 
+## RF Influential Predictors
 
-# Slide 6
+## What is SHAP?
 
-*(empty — add content here)*
+## SHAP on Random Forest
 
+## Interpreting Results
+*give a live example of how you can interpret results for a specific sample*
 
-# Slide 7
+## SHAP Real Example
+*feed the model a game one of us played*
 
-*(empty — add content here)*
+## Conclusions
 
+## Future Work
 
-# Slide 8
+## References
 
-*(empty — add content here)*
-
-
-# Slide 9
-
-*(empty — add content here)*
-
-
-# Slide 10
-
-*(empty — add content here)*
-
-
-# Slide 11
-
-*(empty — add content here)*
-
-
-# Slide 12
-
-*(empty — add content here)*
-
-
-# Slide 13
-
-*(empty — add content here)*
-
-
-# Slide 14
-
-*(empty — add content here)*
-
-
-# Slide 15
-
-*(empty — add content here)*
