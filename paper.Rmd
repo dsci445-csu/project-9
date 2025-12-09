@@ -22,7 +22,7 @@ The game being focused on for this project is League of Legends, a complex, comp
 The main focus of this project is to analyze and interpret player behavior and decision-making to determine how these patterns may impact the outcome of the game. By examining factors such as participation levels, whether their team had more objectives, and experience/gold levels over the course of the game, key behavioral patterns and the player’s impact on the game can be interpreted and identified.
 
 
-## 2. Methods
+## 2. Methods and Analysis
 
 ## 2.1 Data
 All data was gathered through the Riot games developer API on patch 25.22, November 1st through 3rd, 2025. This was accomplished using a data collector written in python that collected corresponding game data from two different api endpoints. First, the Riot match data, which is composed of end-of-game summary statistics. This includes which team won the match, the characters (or Champions) played by each team, the ending gold quantity for each team, and other descriptive statistics. Second, the Riot timeline data, which includes snapshots of the game state in one-minute intervals throughout the match. This data includes (for every minute in the game) information such as the position of each player or inventory of each player. Finally, all data was collected from games played where the average MMR (match making rating) of the participating players was 'Diamond II', which consists of players in approximately the top 1.5% of skill. The primary motivation for this choice was to focus on high-quality yet still plentiful match data. Had a lower skill bracket been selected, the results would be less interpret-able within the context of an organized environment. Had a higher skill bracket been selected, data sparsity would have likely become a problem.
@@ -54,8 +54,9 @@ kable(
 The Riot Games developer API returns a highly nested sequence of DTOs (Data Transfer Objects). These structures contain match level, team level, as well as player level level data embedded within multiple, tightly coupled transfer layers, requiring complicated extraction before modeling. All desired JSON responses were flattened into a simpler form by isolating the relevant participant objects and merging them with corresponding match metadata. To accomplish this, data was cleaned using a python script.
 
 ## 2.3 Model Evaluation
-Three primary models were fit to the small dataset in order to determine an optimal strategy. Models were evaluated with a 70/30 train/test split and 5-fold cv was used to find optimal hyperparameter tunings.
+Among studies published performing similar League of Legends prediction tasks with similar datasets, top performing models typically  used some sort of nonlinear architecture such as an RNN [4], or other form of deep neural network [3]. However, such an approach is not acceptable for our purposes as the extra predictive power comes at too great a detriment of interpretability. [5] Analyzed a set of model performances on NBA data and found that tree-based models such as random forests outperformed non-tree alternatives. Furthermore, a birds-eye analysis of remaining League of Legends-based papers reveals a similar story: Random forests and logistic regression often comprise the top performing linear models. 
 
+Three options were chosen to fit and compare for the sake of the project: Random Forest, Logistic Regression, and Support Vector Machine models. Initially, these were fit with a small dataset in order to conserve needed compute time. Models were evaluated with a 70/30 train/test split and 5-fold cv for hyperparameter tunings.
 
 ```{r, echo=FALSE}
 library(knitr)
@@ -160,27 +161,15 @@ shap_vals <- fastshap::explain(
   nsim = 1
 )
 
+```
 
+```{r}
 library(tibble)
 library(dplyr)
 library(ggplot2)
 
-global_imp <- colMeans(abs(shap_vals)) %>%
-  enframe(name = "feature", value = "mean_abs_shap") %>%
-  arrange(desc(mean_abs_shap))
-
-ggplot(global_imp[1:20, ], aes(x = reorder(feature, mean_abs_shap), y = mean_abs_shap)) +
-  geom_col() +
-  coord_flip() +
-  labs(
-    title = "Global SHAP Feature Importance",
-    x = "Feature",
-    y = "Mean |SHAP value|"
-  )
-
-
-
 ```
+
 
 ## 3. Results and Discussion
 
@@ -195,10 +184,15 @@ On the other hand, first blood-related statistics were commonly ranked lowest fo
 This project demonstrates a pipeline and plausible solution for integrating SHAP and machine learning maodels to create interpretable, actionable insights about League of Legends match wins. WOrking with a high-level dataset, all three models got high predictive accuracy (even when compared to similar projects in the same area). Vitally, SHAP provided a highly detailed and robust vision of the key parts of the dataset, identifying gold, kills, deaths, vision control and infulential factors and first blood statistics as non-influential. 
 
 The hope is that the work done in this project can help form a foundation for future market-targeted platforms such as analytical systems to support competitive teams in esports, automated coaching for players, or personalized platforms such as the already existent mobalytics.gg. 
-
+  
 ## References
 
-Zamri, M. Asyhraf Zamir, et al. “Online Game Outcome Prediction Model Using Weighted-Based Feature Approach.” Fusion: Practice and Applications (FPA), vol. 15, no. 2, 2024, pp. 132–144. DOI: https://doi.org/10.54216/FPA.150212
+[1] Zamri, M. Asyhraf Zamir, et al. “Online Game Outcome Prediction Model Using Weighted-Based Feature Approach.” Fusion: Practice and Applications (FPA), vol. 15, no. 2, 2024, pp. 132–144. DOI: https://doi.org/10.54216/FPA.150212
 
-J. A. Hitar-García, L. Morán-Fernández and V. Bolón-Canedo, "Machine Learning Methods for Predicting League of Legends Game Outcome," in IEEE Transactions on Games, vol. 15, no. 2, pp. 171-181, June 2023, doi: 10.1109/TG.2022.3153086.
-keywords: {Games;Predictive models;Feature extraction;Prediction algorithms;Neural networks;Data mining;Proposals;Esports;feature creation;  $League\ of\ Legends$   (  $LoL$  );model ensemble;prediction;video games},
+[2] J. A. Hitar-García, L. Morán-Fernández and V. Bolón-Canedo, "Machine Learning Methods for Predicting League of Legends Game Outcome," in IEEE Transactions on Games, vol. 15, no. 2, pp. 171-181, June 2023, doi: 10.1109/TG.2022.3153086.
+
+[3] https://github.com/reneleogp/ML-Prediction-LoL
+
+[4] Antonio Luis Cardoso Silva et al. "Continuous Outcome Prediction of League of Legends Competitive Matches Using Recurrent Neural Networks." (2018).
+
+[5] https://link.springer.com/content/pdf/10.1007/s10115-024-02092-9.pdf
