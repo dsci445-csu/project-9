@@ -10,39 +10,39 @@ output:
 # Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
 
 ## Motivation:
-League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game. The company that created League of Legends, Riot Games, provides public high-quality data through its API, gaining access to game data such as player performance and objectives.
-
-Websites already exist where you can track player statistics such as match history and specific counter pick options, they mainly focus on their surface-level information, not how one's decisions can affect the result of the game.
-
-The main focus is to analyze and interpret player behavior to determine how these patterns influence the outcome of the game. Factors such as key behavioral patterns, player participation, whether their team had more objectives, and experience/gold levels over the course of the game can be interpreted and identified.   
+* League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game.
+* Riot Games provides public high-quality data through its API.
+    * Gain access to game data such as player performance and objectives.
+* Existing websites focus on surface-level information (match history, specific counter picks), not the impact on player decision-making.
+* Goal: Analyze and interpret player behavior to determine how these patterns influence the outcome of the game.
+* Focus: Factors such as key behavioral patterns, player participation, objectives, and experience/gold levels.
 
 ***
 
 ## Research Questions:
 The main questions we want to answer through this project are:
-
 1. Which data best accounts for the outcome of a specific match?
-
 2. Is it possible to provide meaningful feedback to a player on a game using a model?
 
+***
+
 ## Data Overview:
-All data was gathered through the Riot games developer API on patch 25.22, November 1st through 3rd, 2025 by using a python data collector that collected corresponding game data from two different api endpoints.
-
-* 1st Endpoint: Riot Match Data
-    * Composed of end-of-game summary statistics:
-        * Which team won the game, the characters played, the ending gold quantity for each team, etc.
-
-* 2nd Endpoint: Riot Timelines Data
-    * Includes snapshots of the game in one-minute intervals throughout the match including:
-        * Location and inventory of each player, etc.
-
-The datasets used are highly nested, so proper extraction must be taken into consideration.
-
-All data was collected from games where the average matching of participating players was 'Diamond II', which consists of players in the top 1.5% of skill.
+* Data is from Riot Games developer API from patch 25.22 (Nov 1-3, 2025).
+* Used python data collector to collect two different API endpoints:
+    * Match Data - end-of-game summary statistic (game outcome, characters played, ending gold quantity)
+    * Timelines Data - 1-minute snapshot intervals of player location, inventory, events.
+* Highly nested JSONL, requires precise extraction.
+* Collected from games where average matchmatking of players was 'Diamond II' (top 1.5% skill).
     * Focuses on high-quality   
 
-## Out Data:
+***
 
+## Our Data:
+* 'Small' Dataset n=250 matches (2,500 players)
+* 'Medium' Dataset n=5,000 matches (50,000 players)
+* 'Large' Dataset n=50,000 (n=500,000 players)
+
+***
 
 ## Fitting an SVM
 
@@ -52,15 +52,15 @@ library(jsonlite) # imports json into df
 library(dplyr)
 library(tidyr)
 
-df <- read.csv("/workspaces/project-9/sample_data/sample_data/performance.csv")
+# df <- read.csv("/workspaces/project-9/sample_data/sample_data/performance.csv")
 # predictors
 X <- select(merged_data, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
 # convert first blood kill and assist to int
 X <- df %>%
 mutate(X$firstbloodKill = as.numeric(X$firstbloodKill), 
 X$firstbloodAssist = as.numeric(X$firstbloodAssist))
-X['firstBloodKill'] = df[['firstBloodKill']].astype(int)
-X['firstBloodAssist'] = df[['firstBloodAssist']].astype(int)
+
+# python
 # target = outcome of game
-y = df[['win']].astype(int)
+ y = as.numeric(df$win)
 ```
