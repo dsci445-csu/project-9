@@ -84,53 +84,101 @@ library(fastshap)
 
 df <- read.csv("data/d2_250_performance.csv")
 df <- df[df$lane != "NONE", ]
+
 df <- subset(df, select=-turretsLost)
 df <- subset(df, select=-turretTakedowns)
+
 df$position = NULL
 df$win <- factor(df$win)
-X <- model.matrix(win ~ . - 1, data=df)
-X <- as.data.frame(X)
-y <- df$win
 
 set.seed(67)
 nrow <- nrow(df)
 index <- sample(1:nrow, size = nrow * 0.7)
-X_train <- X[index, ]
-y_train <- y[index]
-X_test <- X[-index, ]
-y_test <- y[-index]
+train <- df[index, ]
+test <- df[-index, ]
 
-rf <- rand_forest(
-  mtry= 5,
-  trees = 500,
-  min_n = 5,
-) %>%
-  set_mode("classification") %>%
-  set_engine("ranger", importance = "impurity") %>%
-  fit_xy(X_train, y_train)
+rf_spec <-
+  rand_forest(
+    mtry = tune(),
+    min_n = tune(),
+    trees = 500
+  ) |>
+  set_engine("ranger", importance="impurity") |>
+  set_mode("classification")
 
-pred <- predict(rf, new_data=X_test, type="class")
+rf_wf <-
+  workflow() |>
+  add_model(rf_spec) |>
+  add_formula(win ~ .)
+
+folds <- vfold_cv(train, v=5, strata=win)
+
+rf_grid <- grid_regular(
+  mtry(range = c(2, 10)),
+  min_n(range = c(2, 20)),
+  levels = 6
+)
+
+rf_tuned <- tune_grid(
+  rf_wf,
+  resamples=folds,
+  grid = rf_grid,
+  metrics=metric_set(accuracy)
+)
+
+rf_results <- collect_metrics(rf_tuned)
+
+best_params <- select_best(rf_tuned, metric="accuracy")
+final_rf <- finalize_workflow(rf_wf, best_params)
+
+rf <- fit(final_rf, train)
+
+pred <- predict(rf, new_data=test, type="class")
 
 eval_df <- tibble(
   win = y_test,
   .pred_class = pred$.pred_class
 )
-
-#accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-library(vip)
+accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+```
 
-vip(rf$fit, num_features = 20)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+acc_results <- rf_results |> dplyr::filter(.metric == "accuracy")
 
-eval_df %>%
-  mutate(correct = win == .pred_class) %>%
-  ggplot(aes(x = win, fill = correct)) +
-  geom_bar(position = "fill") +
-  labs(y = "Proportion", title = "(f4) Prediction Accuracy by Class")
+ggplot(acc_results, aes(x = mtry, y = min_n, fill = mean)) +
+  geom_tile() +
+  labs(
+    title = "5-Fold CV Accuracy for Random Forest",
+    x = "mtry",
+    y = "min_n",
+    fill = "Accuracy"
+  )
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tibble)
+library(dplyr)
+
+imp <- rf |> extract_fit_engine() |> ranger::importance() |>
+  enframe(name="variable", value="importance") |>
+  arrange(desc(importance))
+
+library(ggplot2)
+
+ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Random Forest Predictor Importance",
+    x = "Predictor",
+    y = "Importance"
+  ) 
 
 ```
+
 As seen above in f4, the random forest model achieves a high prediction accuracy with a similar number of false positives and false negatives. Furthermore, as seen in f3, we can see that deaths and gold earned play a significant role in influencing the outcome of games. First blood kill and some other statistics provide less insight. 
 
 ## 2.4 Interpretability
@@ -144,30 +192,59 @@ A primary advantage of using SHAP over model-specific analysis is that it is agn
 
 Futhermore, by looking at the local prediction for a specific match, we can begin to provide feedback to the player on things to improve. This aligns with the stated goals of this project and will be explored further later in the paper.
 
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(fastshap)
 
-# Wrapper function: the model must return predicted probabilities for class "1"
+X <- train %>% select(-win)
+
+predict(rf, new_data = head(X), type = "prob") %>% names()
+
 f_fun <- function(object, newdata) {
-  predict(object, new_data = newdata, type = "prob")$.pred_1
+  newdata <- as.data.frame(newdata)
+  predict(object, new_data = newdata, type = "prob") %>%
+    dplyr::pull(".pred_True") 
 }
 
-# Compute SHAP values for the test set
 set.seed(1)
 shap_vals <- fastshap::explain(
   rf,
-  X = X_train,
+  X = X,
   pred_wrapper = f_fun,
-  nsim = 1
+  nsim = 5
 )
+```
+
+```{r}
+print("Mean impact of deaths on game outcome:")
+mean(abs(shap_vals[ ,1]))
 
 ```
 
 ```{r}
-library(tibble)
-library(dplyr)
-library(ggplot2)
+shap_long <- as.data.frame(shap_vals) %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = -row_id,
+    names_to = "feature",
+    values_to = "shap"
+  )
 
+feature_order <- shap_long %>%
+  group_by(feature) %>%
+  summarise(mean_abs_shap = mean(abs(shap), na.rm = TRUE)) %>%
+  arrange(mean_abs_shap) %>%
+  pull(feature)
+
+shap_long$feature <- factor(shap_long$feature, levels = feature_order)
+
+ggplot(shap_long, aes(x = shap, y = feature)) +
+  geom_point(alpha = 0.25) +
+  labs(
+    title = "SHAP Summary Plot",
+    x = "SHAP Value",
+    y = "Feature"
+  )
 ```
 
 
