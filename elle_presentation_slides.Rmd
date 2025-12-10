@@ -157,13 +157,14 @@ imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_tra
                          arrange(desc(importance))
 
 ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
-  geom_col() + # was fill ="blue"
+  geom_col(fill ="blue") +
   coord_flip() +
   labs(
     title = "SVM Predictor Importance",
     x = "Predictor",
     y = "Importance"
-  )
+  ) +
+  theme_minimal()
 ```
 
 ```{r}
