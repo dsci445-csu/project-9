@@ -1,6 +1,6 @@
 ---
 title: "Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods"
-author: "By Nick Li, Ryan Stevens, Elle Isabel Angell, Coleman Garnier"
+author: "By Nick Li, Ryan Stevens, Elle Angell, Coleman Garnier"
 output:
   ioslides_presentation:
     widescreen: true
