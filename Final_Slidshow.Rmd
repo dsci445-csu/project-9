@@ -108,16 +108,21 @@ library(tidyr)
 library(tibble)
 library(tidymodels)
 library(ggplot2)
+library(parsnip)
+library(fastshap)
+library(kernlab)
+library(viridis)
+
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
-# Predictors
-# Source: https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
+# predictors
+# https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
 X <- df %>%
 select(deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills) %>% 
 mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
        firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
-# Target
+# target = outcome of game
 y <- as.factor(df$win)
-# Split into training and test sets (70 train 30 test)
+# split into training and test sets (70 train 30 test)
 set.seed(67)
 nrow <- nrow(df)
 split_data <- sample(1:nrow, size = nrow * 0.7)
@@ -125,32 +130,30 @@ X_train <- X[split_data, ]
 y_train <- y[split_data]
 X_test <- X[-split_data, ]
 y_test <- y[-split_data]
-# Scaling X
-# Source: https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
+# scaling X
+# https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
 X_train_scaled = scale(X_train)
 X_test_scaled = scale(X_test,
                       center = attr(X_train_scaled, "scaled:center"),
                       scale = attr(X_train_scaled, "scaled:scale"))
-# Convert to df to train on svm
+# convert to df to train on svm
 df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
-# Train svm
+# train svm
 svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
+plot(svm_model)
 y_pred <- predict(svm_model, newdata = df_test)
-# Accuracy 
+
+# accuracy 
 eval_df <- tibble(
   win = factor(y_test),
   .pred_class = factor(y_pred)
 )
 svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
-print(paste("SVM Accuracy: ", sprintf("%1.2f", svm_accuracy)))
-# Confusion matrix to check accuracy
+# confusion matrix to check accuracy
 conf_matrix <- table(predicted = y_pred, actual = y_test)
-print("Confusion Matrix: ")
-print(conf_matrix)
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
-print(paste("Misclassification Rate: ", sprintf("%1.2f", misclass_rate)))
 ```
 ## Fitting a Random Forest
 
