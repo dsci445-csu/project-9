@@ -1,5 +1,5 @@
 ---
-title: "DSCI 445 Final Slidshow"
+title: "Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods"
 author: "By Nick Li, Ryan Stevens, Elle Isabel Angell, Coleman Garnier"
 output:
   ioslides_presentation:
@@ -7,10 +7,12 @@ output:
     incremental: false
 ---
 
-# Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
-
 ## Motivation:
-*lol is big game...*
+League is the World's Largest E-sport and it's not close.
+
+* 2024 World Finals: 50 million concurrent peak viewership.
+* Most active E-sport at CSU
+* Many players want to get better
 
 ## Research Questions:
 1. Which data best accounts for the outcome of a specific match?
@@ -45,6 +47,7 @@ output:
 
 ## The Research:
 Nonlinear Models Dominate:
+
 * Gonzalez, 2023, Deep Neural Network: 89.8%
 * Zamir et al., 2024, RNN: 86.7%
 * Silva et al., 2023, RNN: 73% (at 15m)
@@ -68,7 +71,7 @@ Nonlinear Models Dominate:
 ## SHAP Real Example
 *feed the model a game one of us played*
 
-# Result
+## Results
 
 - GLM achieved **75.1%** accuracy  
 - Random Forest: **74.7%** accuracy
@@ -77,14 +80,14 @@ Nonlinear Models Dominate:
 - Lowest predictors: **first blood–related stats**
 - ***graph???
 
-# Discussion
+## Discussion
 
 - **GoldEarned** → leads to item power → greater access to victory conditions  
 - **Deaths** → enemy gold + **loss of tempo** (6–56 seconds downtime)  
 - First blood metrics → minimal long-term predictive value  
 
 
-# Conclusion
+## Conclusion
 
 - Pipeline integrates **ML models + SHAP** for interpretable insights  
 - High predictive performance across all three models  
@@ -97,3 +100,4 @@ Nonlinear Models Dominate:
 
 ## References
 
+https://x.com/lolesports/status/1859295721956024521
