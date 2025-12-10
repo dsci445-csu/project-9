@@ -126,25 +126,38 @@ split_data <- sample(seq_len(nr), size = nrow * 0.7)
 train <- df[split_data, ]
 test <- df[-split_data, ]
 
-X_train_numeric <- model.matrix(win ~ . -1, data = train) %>%
-                              as.data.frame()
-X_train_numeric <- X_train_numeric %>% select(where(~ var(.) != 0))
+# converts df to numeric matrix for SVM
+# win ~ = predict win using all other columns
+X_train_numeric <- model.matrix(win ~ . -1, data = train) |>
+                                as.data.frame()
+# remove columns with 0 variance (causing lots of errors)
+X_train_numeric <- X_train_numeric |> select(where(~ var(.) != 0))
+# stores target variable (win) for training (True or False)
 y_train <- train$win
-levels(y_train)
+# train svm with ksvm (kernel package) instead of svm
+# converts df to numeric matrix with y_train as the target
+# C = regulation param
 svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train, kernel = "rbfdot", C = 1, kpar = "automatic", prob.model = TRUE))
+
+# how to get predictions from model for shap
+# fastshap requires prediction functon
 pred_wrapper <- function(object, newdata) {
   predict(object, newdata = as.matrix(newdata), type = "probabilities")[, "True"]
 }
 
 set.seed(123)
-imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_train, pred_wrapper = pred_wrapper, nsim = 5) %>%
-                         as.data.frame() %>%
-                         summarise(across(everything(), ~ mean(abs(.)))) %>%
-                         tidyr::pivot_longer(cols = everything(), names_to = "variable", values_to = "importance") %>%
+# used fastshap to extract importance info for graph
+# helps determine features that are most important in determining
+# explain() calculates aprox SHAP values for each feature in X_train_numeric
+# output = matrix of aprox SHAP values
+imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_train, pred_wrapper = pred_wrapper, nsim = 20) |>
+                         as.data.frame() |>
+                         summarise(across(everything(), ~ mean(abs(.)))) |> # mean absoluite SHAP value
+                         tidyr::pivot_longer(cols = everything(), names_to = "variable", values_to = "importance") |> # converts from column = features to row = features
                          arrange(desc(importance))
 
 ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
-  geom_col(fill ="blue") +
+  geom_col() + # was fill ="blue"
   coord_flip() +
   labs(
     title = "SVM Predictor Importance",
