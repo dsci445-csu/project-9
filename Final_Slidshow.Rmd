@@ -55,6 +55,45 @@ Nonlinear Models Dominate:
 * Chen et al., 2021, Log. Regression: 60.24%
 
 ## Fitting a GLM
+* Using logistic regression to predict game outcome against all of our player performance metrics (minus turrets)
+* 70/30 split between our train/test sets
+* Built our GLM on the training set and applied to test data
+* Result: ~75.1% accuracy- highest of the all the models we built
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+library(parsnip)
+library(tidymodels)
+library(fastshap)
+df <- read.csv("data/d2_250_performance.csv")
+df$win <- as.integer(df$win == "True")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+X <- model.matrix(win ~ . - 1, data=df)
+X <- as.data.frame(X)
+y <- df$win
+
+set.seed(67)
+nrow <- nrow(df)
+index <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[index, ]
+y_train <- y[index]
+X_test <- X[-index, ]
+y_test <- y[-index]
+
+glm <- 
+  logistic_reg() %>%
+  set_engine("glm", family=binomial()) %>%
+  fit_xy(x = X_train, y = y_train)
+glm_pred <- predict(glm, new_data = X_test, type="prob")[[".pred_True"]]
+glm_pred_class <- ifelse(glm_pred > 0.5, "True", "False")
+glm_pred_class <- factor(glm_pred_class, levels = levels(y_test))
+print(paste("GLM Test Accuracy: ",mean(glm_pred_class == y_test)))
+
+```
+
 
 ## Fitting an SVM
 * Goal: Predict game outcome (W/L) based on player performance metrics
