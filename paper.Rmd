@@ -82,20 +82,21 @@ library(parsnip)
 library(tidymodels)
 library(fastshap)
 
-df <- read.csv("data/d2_250_performance.csv")
+df <- read.csv("data/d2_500_10_performance.csv")
 df <- df[df$lane != "NONE", ]
-
 df <- subset(df, select=-turretsLost)
 df <- subset(df, select=-turretTakedowns)
-
 df$position = NULL
 df$win <- factor(df$win)
 
-set.seed(67)
-nrow <- nrow(df)
-index <- sample(1:nrow, size = nrow * 0.7)
+nr <- nrow(df)
+index <- sample(1:nr, size = nr * 0.9)
 train <- df[index, ]
 test <- df[-index, ]
+
+nr <- nrow(train)
+index <- sample(1:nr, size = nr * 0.1)
+s_train <- train[index, ]
 
 rf_spec <-
   rand_forest(
@@ -111,7 +112,7 @@ rf_wf <-
   add_model(rf_spec) |>
   add_formula(win ~ .)
 
-folds <- vfold_cv(train, v=5, strata=win)
+folds <- vfold_cv(s_train, v=5, strata=win)
 
 rf_grid <- grid_regular(
   mtry(range = c(2, 10)),
@@ -132,17 +133,18 @@ best_params <- select_best(rf_tuned, metric="accuracy")
 final_rf <- finalize_workflow(rf_wf, best_params)
 
 rf <- fit(final_rf, train)
-
-pred <- predict(rf, new_data=test, type="class")
-
-eval_df <- tibble(
-  win = y_test,
-  .pred_class = pred$.pred_class
-)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+pred <- predict(rf, new_data=test, type="class")
+
+eval_df <- tibble(
+  win = test$win,
+  .pred_class = pred$.pred_class
+)
+
 accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+table(eval_df$win, eval_df$.pred_class)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -161,12 +163,11 @@ ggplot(acc_results, aes(x = mtry, y = min_n, fill = mean)) +
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(tibble)
 library(dplyr)
+library(ggplot2)
 
 imp <- rf |> extract_fit_engine() |> ranger::importance() |>
   enframe(name="variable", value="importance") |>
   arrange(desc(importance))
-
-library(ggplot2)
 
 ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
   geom_col() +
