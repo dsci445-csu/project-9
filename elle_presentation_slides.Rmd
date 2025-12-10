@@ -44,7 +44,8 @@ output:
 ***
 
 ## Fitting an SVM
-
+- Confusion matrix shows correctly and falsely predicted win and losses
+-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(e1071)
 library(dplyr)
@@ -52,43 +53,38 @@ library(tidyr)
 library(tibble)
 library(tidymodels)
 library(ggplot2)
+
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
-# X <- select(df, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
-# convert first blood kill and assist to int
 # https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
 X <- df %>%
 select(deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills) %>% 
 mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
        firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
-
-# python
 # target = outcome of game
 y <- as.factor(df$win)
-set.seed(67)
 # split into training and test sets (70 train 30 test)
+set.seed(67)
 nrow <- nrow(df)
 split_data <- sample(1:nrow, size = nrow * 0.7)
 X_train <- X[split_data, ]
 y_train <- y[split_data]
 X_test <- X[-split_data, ]
 y_test <- y[-split_data]
-
 # scaling X
 # https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
 X_train_scaled = scale(X_train)
 X_test_scaled = scale(X_test,
                       center = attr(X_train_scaled, "scaled:center"),
                       scale = attr(X_train_scaled, "scaled:scale"))
-
 # convert to df to train on svm
 df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
-
 # train svm
 svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
 y_pred <- predict(svm_model, newdata = df_test)
 
+# accuracy 
 eval_df <- tibble(
   win = factor(y_test),
   .pred_class = factor(y_pred)
@@ -102,17 +98,19 @@ conf_matrix <- table(predicted = y_pred, actual = y_test)
 print("Confusion Matrix: ")
 print(conf_matrix)
 
-# % of wrong predictions
+# misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
 cat("Misclassification Rate: ", sprintf("%1.2f", misclass_rate))
-
 # create grid to plot
 # https://stackoverflow.com/questions/39435852/create-a-square-grid-in-a-dataframe-in-r
 # graph
-xgrid <- expand.grid(dragonKills = seq(from = min(X$dragonKills), to = max(X$dragonKills),
-                                 length.out = 200),
-                     baronKills = seq(from = min(X$baronKills), to = max(X$baronKills),
-                                  length.out = 200))
+xgrid <- expand.grid(
+                     dragonKills = seq(from = min(X$dragonKills),
+                                       to = max(X$dragonKills),
+                                       length.out = 200),
+                     baronKills = seq(from = min(X$baronKills),
+                                     to = max(X$baronKills),
+                                     length.out = 200))
 # add other variables to grid so they're recognized
 xgrid$kills <- mean(X$kills)
 xgrid$deaths <- mean(X$deaths)
@@ -127,7 +125,7 @@ grid_scaled <- scale(xgrid_copy[, colnames(X_train)],
                      scale = attr(X_train_scaled, "scaled:scale"))
 # predict with scaled grid
 xgrid_copy$ygrid_pred <- predict(svm_model, newdata = grid_scaled)
-xgrid_copy$ygrid_pred <- factor(xgrid$ygrid_pred, levels = levels(y_train))
+xgrid_copy$ygrid_pred <- factor(xgrid_copy$ygrid_pred, levels = levels(y_train))
 
 df_copy <- df
 df_copy$dragonKills <- grid_scaled[, dragonKills]
