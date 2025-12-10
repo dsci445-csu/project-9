@@ -57,6 +57,7 @@ library(ggplot2)
 library(parsnip)
 library(fastshap)
 library(kernlab)
+library(viridis)
 
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
@@ -86,6 +87,7 @@ df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
 # train svm
 svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
+plot(svm_model)
 y_pred <- predict(svm_model, newdata = df_test)
 
 # accuracy 
@@ -116,60 +118,89 @@ df <- subset(df, select =- turretsLost)
 df <- subset(df, select =- turretTakedowns)
 df$position <- NULL
 df$win <- factor(df$win)
-# target = outcome of game
-y <- as.factor(df$win)
+
 # split into training and test sets (70 train 30 test)
 set.seed(67)
-nrow <- nrow(df)
-split_data <- sample(1:nrow(df), size = nrow * 0.7)
+nr <- nrow(df)
+split_data <- sample(seq_len(nr), size = nrow * 0.7)
 train <- df[split_data, ]
 test <- df[-split_data, ]
 
-svm_spec <-
-  svm_rbf(
-    cost = tune(),
-    rbf_sigma = tune(),
-  ) |>
-  set_engine("kernlab") |>
-  set_mode("classification")
+X_train_numeric <- model.matrix(win ~ . -1, data = train) %>%
+                              as.data.frame()
+X_train_numeric <- X_train_numeric %>% select(where(~ var(.) != 0))
+y_train <- train$win
+levels(y_train)
+svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train, kernel = "rbfdot", C = 1, kpar = "automatic", prob.model = TRUE))
+pred_wrapper <- function(object, newdata) {
+  predict(object, newdata = as.matrix(newdata), type = "probabilities")[, "True"]
+}
 
-svm_recipe <- recipe(win ~ ., data=train) %>%
-  step_zv(all_predictors()) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
+set.seed(123)
+imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_train, pred_wrapper = pred_wrapper, nsim = 5) %>%
+                         as.data.frame() %>%
+                         summarise(across(everything(), ~ mean(abs(.)))) %>%
+                         tidyr::pivot_longer(cols = everything(), names_to = "variable", values_to = "importance") %>%
+                         arrange(desc(importance))
 
-svm_wf <-
-  workflow() |>
-  add_model(svm_spec) |>
-  add_recipe(svm_recipe)
+ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col(fill ="blue") +
+  coord_flip() +
+  labs(
+    title = "SVM Predictor Importance",
+    x = "Predictor",
+    y = "Importance"
+  )
+```
+
+```{r}
+# SVM cross-validation graph
+# svm_spec <-
+#   svm_rbf(
+#     cost = tune(),
+#    rbf_sigma = tune(),
+# ) |>
+#  set_engine("kernlab") |>
+#  set_mode("classification")
+
+#svm_recipe <- recipe(win ~ ., data=train) %>%
+#  step_dummy(all_nominal_predictors()) %>%
+#  step_zv(all_predictors()) %>%
+#  step_normalize(all_numeric_predictors())
+
+#svm_wf <-
+#  workflow() |>
+#  add_model(svm_spec) |>
+#  add_recipe(svm_recipe)
 
 # cross-validation
-folds <- vfold_cv(train, v = 2, strata = win)
+# folds <- vfold_cv(train, v = 2, strata = win)
 
-svm_grid <- grid_regular(
-  cost(range = c(0.01, 100), trans = log10_trans()),
-  rbf_sigma(range = c(0.01, 100), trans = log10_trans()),
-  levels = 10
-)
+#svm_grid <- grid_regular(
+#  cost(range = c(0.01, 100), trans = log10_trans()),
+#  rbf_sigma(range = c(0.01, 100), trans = log10_trans()),
+#  levels = 10
+#)
 
-svm_tuned <- tune_grid(
-  svm_wf,
-  resamples = folds,
-  grid = svm_grid,
-  metrics = metric_set(accuracy)
-)
-svm_results <- collect_metrics(svm_tuned)
-acc_results <- svm_results |> dplyr::filter(.metric == "accuracy")
+#svm_tuned <- tune_grid(
+#  svm_wf,
+#  resamples = folds,
+#  grid = svm_grid,
+#  metrics = metric_set(accuracy)
+#)
+#svm_results <- collect_metrics(svm_tuned)
+#acc_results <- svm_results |> dplyr::filter(.metric == "accuracy")
 
-ggplot(acc_results, aes(x = cost, y = rbf_sigma, fill = mean)) +
-  geom_tile() +
-  geom_point(color = "white", size = 4) +
-  scale_x_log10() +
-  scale_y_log10() +
-  labs(
-     title = "5-Fold CV Accuracy for SVM (RBF Kernel)",
-     x = "cost",
-     y = "rbf_sigma",
-     fill = "Accuracy"
-   )
+# ggplot(acc_results, aes(x = cost, y = rbf_sigma, fill = mean)) +
+#  geom_tile() +
+#  geom_point(color = "white", size = 4) +
+#  scale_fill_viridis_c(option = "C") +
+#  scale_x_log10() +
+#  scale_y_log10() +
+#  labs(
+#     title = "5-Fold CV Accuracy for SVM (RBF Kernel)",
+#     x = "cost",
+#     y = "rbf_sigma",
+#     fill = "Accuracy"eric %>% select(where(~ var(.) != 0))
+#   )
 ```
