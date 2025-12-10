@@ -10,12 +10,12 @@ output:
 # Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
 
 ## Motivation:
-* League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game.
-* Riot Games provides public high-quality data through its API.
-    * Gain access to game data such as player performance and objectives.
-* Existing websites focus on surface-level information (match history, specific counter picks), not the impact on player decision-making.
-* Goal: Analyze and interpret player behavior to determine how these patterns influence the outcome of the game.
-* Focus: Factors such as key behavioral patterns, player participation, objectives, and experience/gold levels.
+- League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game.
+- Riot Games provides public high-quality data through its API.
+    - Gain access to game data such as player performance and objectives.
+- Existing websites focus on surface-level information (match history, specific counter picks), not the impact on player decision-making.
+- Goal: Analyze and interpret player behavior to determine how these patterns influence the outcome of the game.
+- Focus: Factors such as key behavioral patterns, player participation, objectives, and experience/gold levels.
 
 ***
 
@@ -26,32 +26,32 @@ output:
 ***
 
 ## Data Overview:
-* Data is from Riot Games developer API from patch 25.22 (Nov 1-3, 2025).
-* Used python data collector to collect two different API endpoints:
-    * Match Data - end-of-game summary statistic (game outcome, characters played, ending gold quantity)
-    * Timelines Data - 1-minute snapshot intervals of player location, inventory, events.
-* Highly nested JSONL, requires precise extraction.
-* Collected from games where average matchmatking of players was 'Diamond II' (top 1.5% skill).
-    * Focuses on high-quality   
+- Data is from Riot Games developer API from patch 25.22 (Nov 1-3, 2025).
+- Used python data collector to collect two different API endpoints:
+    - **Match Data** - end-of-game summary statistic (game outcome, characters played, ending gold quantity)
+    - **Timelines Data** - 1-minute snapshot intervals of player location, inventory, events.
+- Highly nested JSONL, requires precise extraction.
+- Collected from games where average matchmatking of players was 'Diamond II' (top 1.5% skill).
+    - Focuses on high-quality....   
 
 ***
 
 ## Our Data:
-* 'Small' Dataset n=250 matches (2,500 players)
-* 'Medium' Dataset n=5,000 matches (50,000 players)
-* 'Large' Dataset n=50,000 (n=500,000 players)
+* 'Small' Dataset n = 250 matches (2,500 players)
+* 'Medium' Dataset n = 5,000 matches (50,000 players)
+* 'Large' Dataset n = 50,000 (n=500,000 players)
 
 ***
 
 ## Fitting an SVM
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-install.packages("tidymodels")
 library(e1071)
 library(dplyr)
 library(tidyr)
 library(tibble)
 library(tidymodels)
+library(ggplot2)
 ```
 ```{r}
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
@@ -67,8 +67,6 @@ mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
 # python
 # target = outcome of game
 y <- as.factor(df$win)
-```
-```{r}
 set.seed(67)
 # split into training and test sets (70 train 30 test)
 nrow <- nrow(df)
@@ -81,7 +79,9 @@ y_test <- y[-split_data]
 # scaling X
 # https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
 X_train_scaled = scale(X_train)
-X_test_scaled = scale(X_test, center = attr(X_train_scaled, "scaled:center"), scale = attr(X_train_scaled, "scaled:scale"))
+X_test_scaled = scale(X_test,
+                      center = attr(X_train_scaled, "scaled:center"),
+                      scale = attr(X_train_scaled, "scaled:scale"))
 
 # convert to df to train on svm
 df_train <- data.frame(y = factor(y_train), X_train_scaled)
@@ -92,8 +92,8 @@ svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
 y_pred <- predict(svm_model, newdata = df_test)
 
 eval_df <- tibble(
-    win = factor(y_test),
-    .pred_class = factor(y_pred)
+  win = factor(y_test),
+  .pred_class = factor(y_pred)
 )
 
 svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
@@ -104,9 +104,56 @@ conf_matrix <- table(predicted = y_pred, actual = y_test)
 print("Confusion Matrix: ")
 print(conf_matrix)
 
+# % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
 cat("Misclassification Rate: ", sprintf("%1.2f", misclass_rate))
-```
-```{r}
+
+# create grid to plot
+# https://stackoverflow.com/questions/39435852/create-a-square-grid-in-a-dataframe-in-r
 # graph
+xgrid <- expand.grid(dragonKills = seq(from = min(X$dragonKills), to = max(X$dragonKills),
+                                 length.out = 200),
+                     baronKills = seq(from = min(X$baronKills), to = max(X$baronKills),
+                                  length.out = 200))
+# add other variables to grid so they're recognized
+xgrid$kills <- mean(X$kills)
+xgrid$deaths <- mean(X$deaths)
+xgrid$firstBloodKill <- mean(X$firstBloodKill)
+xgrid$firstBloodAssist <- mean(X$firstBloodAssist)
+xgrid_copy <- xgrid
+# reorder xgrid columns to match SVM
+xgrid <- xgrid[, colnames(X_train)]
+# scale grid
+grid_scaled <- scale(xgrid,
+                     center = attr(X_train_scaled, "scaled:center"),
+                     scale = attr(X_train_scaled, "scaled:scale"))
+# predict with scaled grid
+xgrid_copy$ygrid_pred <- predict(svm_model, newdata = grid_scaled)
+xgrid_copy$ygrid_pred <- factor(xgrid$ygrid_pred, levels = levels(y_train))
+# xgrid$pred_num <- as.numeric(xgrid$ygrid_pred)
+
+# add ygrid to xgrid
+# xgrid$ygrid_num <- ifelse(ygrid == "TRUE", 2, 1)
+# xgrid$ygrid_fact <- factor(xgrid$ygrid_num)
+
+# plot_points <- df %>%
+  # mutate(win = factor(win))
+
+ggplot() +
+  # decision background
+  geom_tile(data = xgrid_copy, aes(x = dragonKills, y = baronKills, fill = ygrid_pred), alpha = 0.4) +
+  geom_jitter(data = df, aes(x = dragonKills, y = baronKills, color = win)) +
+  scale_fill_manual(values = c("False" = "red", "True" = "black"), name = "Predicted") +
+  scale_colour_manual(values = c("False" = "red", "True" = "black"), name = "Actual") +
+  theme_minimal() +
+  labs(title = "SVM Decision Boundary",
+       x = "Dragon Kills",
+       y = "Baron Kills")
+# decision boundary code had issues implementing
+# stat_contour(data = xgrid, aes(x = killsOG, y = deathsOG, z = ygrid_num),
+# breaks = 1.5, color = "black", size = 1) + # decision boundary
+
+# plot(xgrid$kills, xgrid$deaths, col = as.numeric(ygrid), pch = 20, cex = 0.3)
+# points(X$kills, X$deaths, col = as.numeric(y) + 1, pch = 19)
+# legend("topright", c("Win, Loss"), col = c("blue","black"))
 ```
