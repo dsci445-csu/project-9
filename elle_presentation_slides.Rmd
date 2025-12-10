@@ -52,8 +52,6 @@ library(tidyr)
 library(tibble)
 library(tidymodels)
 library(ggplot2)
-```
-```{r}
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
 # X <- select(df, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills)
@@ -124,27 +122,23 @@ xgrid_copy <- xgrid
 # reorder xgrid columns to match SVM
 xgrid <- xgrid[, colnames(X_train)]
 # scale grid
-grid_scaled <- scale(xgrid,
+grid_scaled <- scale(xgrid_copy[, colnames(X_train)],
                      center = attr(X_train_scaled, "scaled:center"),
                      scale = attr(X_train_scaled, "scaled:scale"))
 # predict with scaled grid
 xgrid_copy$ygrid_pred <- predict(svm_model, newdata = grid_scaled)
 xgrid_copy$ygrid_pred <- factor(xgrid$ygrid_pred, levels = levels(y_train))
-# xgrid$pred_num <- as.numeric(xgrid$ygrid_pred)
 
-# add ygrid to xgrid
-# xgrid$ygrid_num <- ifelse(ygrid == "TRUE", 2, 1)
-# xgrid$ygrid_fact <- factor(xgrid$ygrid_num)
-
-# plot_points <- df %>%
-  # mutate(win = factor(win))
-
+df_copy <- df
+df_copy$dragonKills <- grid_scaled[, dragonKills]
+df_copy$baronKills <- grid_scaled[, baronKills]
+df_copy$win <- factor(df_copy$win, levels = levels(y_train))
 ggplot() +
   # decision background
   geom_tile(data = xgrid_copy, aes(x = dragonKills, y = baronKills, fill = ygrid_pred), alpha = 0.4) +
-  geom_jitter(data = df, aes(x = dragonKills, y = baronKills, color = win)) +
-  scale_fill_manual(values = c("False" = "red", "True" = "black"), name = "Predicted") +
-  scale_colour_manual(values = c("False" = "red", "True" = "black"), name = "Actual") +
+  geom_jitter(data = df_copy, aes(x = dragonKills, y = baronKills, color = win), width = 0.04, height = 0.04) +
+  scale_fill_manual(values = c("True" = "red", "False" = "black"), name = "Predicted") +
+  scale_colour_manual(values = c("True" = "red", "False" = "black"), name = "Actual") +
   theme_minimal() +
   labs(title = "SVM Decision Boundary",
        x = "Dragon Kills",
