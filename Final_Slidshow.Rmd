@@ -102,6 +102,7 @@ print(paste("GLM Test Accuracy: ",mean(glm_pred_class == y_test)))
 * Confusion Matrix: Accurately vs. Falsely predicted
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# fitting SVM w/ accuracy report, misclassication rate, confusion matrix
 library(e1071)
 library(dplyr)
 library(tidyr)
@@ -115,7 +116,7 @@ library(viridis)
 
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
-# https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
+# Source: https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
 X <- df %>%
 select(deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills) %>% 
 mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
@@ -131,7 +132,7 @@ y_train <- y[split_data]
 X_test <- X[-split_data, ]
 y_test <- y[-split_data]
 # scaling X
-# https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
+# Source: https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
 X_train_scaled = scale(X_train)
 X_test_scaled = scale(X_test,
                       center = attr(X_train_scaled, "scaled:center"),
@@ -154,6 +155,56 @@ svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
 conf_matrix <- table(predicted = y_pred, actual = y_test)
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# graph
+df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
+df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
+df$lane <- as.factor(df$lane)
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select =- turretsLost)
+df <- subset(df, select =- turretTakedowns)
+df$position <- NULL
+df$win <- factor(df$win)
+
+# split into training and test sets (70 train 30 test)
+set.seed(67)
+nr <- nrow(df)
+split_data <- sample(seq_len(nr), size = nrow * 0.7)
+train <- df[split_data, ]
+test <- df[-split_data, ]
+
+# converts df to numeric matrix for SVM
+X_train_numeric <- model.matrix(win ~ . -1, data = train) |>
+                                as.data.frame()
+# remove columns with 0 variance (0 variance was causing errors)
+X_train_numeric <- X_train_numeric |> select(where(~ var(.) != 0))
+# stores target variable (win) for training (True or False)
+y_train <- train$win
+# train svm with ksvm (kernel package) for shap+graph
+# converts df to numeric matrix with y_train as the target
+svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train, kernel = "rbfdot", C = 1, kpar = "automatic", prob.model = TRUE))
+# get predictions from model for shap
+pred_wrapper <- function(object, newdata) {
+  predict(object, newdata = as.matrix(newdata), type = "probabilities")[, "True"]
+}
+set.seed(123)
+# extracts importance info for graph
+imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_train, pred_wrapper = pred_wrapper, nsim = 20) |>
+                         as.data.frame() |>
+                         summarise(across(everything(), ~ mean(abs(.)))) |> # mean absolute SHAP value
+                         tidyr::pivot_longer(cols = everything(), names_to = "variable", values_to = "importance") |>
+                         arrange(desc(importance))
+
+ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col(fill ="blue") +
+  coord_flip() +
+  labs(
+    title = "SVM Predictor Importance",
+    x = "Predictor",
+    y = "Importance"
+  ) +
+  theme_minimal()
 ```
 ## Fitting a Random Forest
 
