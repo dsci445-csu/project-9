@@ -1,6 +1,6 @@
 ---
 title: Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
-author: "Ryan Stevens, Elle Isabel Angell, Nick Lee, Coleman Garnier"
+author: "Ryan Stevens, Elle Isabel Angell, Nick Li, Coleman Garnier"
 output:
   pdf_document: default
   html_document:
