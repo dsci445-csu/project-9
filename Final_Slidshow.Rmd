@@ -61,6 +61,7 @@ Nonlinear Models Dominate:
 library(parsnip)
 library(tidymodels)
 library(fastshap)
+library(caret)
 df <- read.csv("./sample data/d2_250_performance.csv")
 df <- df[df$lane != "NONE", ]
 df <- subset(df, select=-turretsLost)
@@ -87,6 +88,9 @@ glm_pred <- predict(glm, new_data = X_test, type="prob")[[".pred_True"]]
 glm_pred_class <- ifelse(glm_pred > 0.5, "True", "False")
 glm_pred_class <- factor(glm_pred_class, levels = levels(y_test))
 print(paste("GLM Test Accuracy: ",mean(glm_pred_class == y_test)))
+
+cf <- confusionMatrix(data = glm_pred_class, reference = y_test)
+fourfoldplot(as.table(cf), color = c("yellow", "pink"), main = "Confusion Matrix")
 
 ```
 
