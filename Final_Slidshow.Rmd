@@ -36,15 +36,12 @@ League is the World's Largest E-sport and it's not close.
 
 ## Data Features:
 * Binary classification problem (win/loss)
-*talk about the sort of features we have*
-
-## Gold and Wins:
-*graph about gold vs duration colored by win*
+* Over 120 potential predictor columns in raw data
+* Our dataset used 20
 
 ## Turrets:
-*image to illustrate why they are important*
-*graph about turrets lost and turret takedowns vs win*
-*this is why we removed them from the data*
+* Initially accounted for roughly 89% of variance
+* Highly colinear with outcome 
 
 ## The Research:
 Nonlinear Models Dominate:
@@ -142,7 +139,7 @@ df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
 # train svm
 svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
-plot(svm_model)
+#plot(svm_model)
 y_pred <- predict(svm_model, newdata = df_test)
 
 # accuracy 
@@ -329,10 +326,70 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 * Explains feature contribution to a desicion
 
 ## SHAP on Random Forest
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(fastshap)
 
+X <- s_train %>% select(-win)
+
+predict(rf, new_data = head(X), type = "prob") %>% names()
+
+f_fun <- function(object, newdata) {
+  newdata <- as.data.frame(newdata)
+  predict(object, new_data = newdata, type = "prob") %>%
+    dplyr::pull(".pred_True") 
+}
+
+set.seed(1)
+shap_vals <- fastshap::explain(
+  rf,
+  X = X,
+  pred_wrapper = f_fun,
+  nsim = 5
+)
+```
+
+```{r}
+print("Mean impact of deaths on game outcome:")
+mean(abs(shap_vals[ ,1]))
+
+```
+
+## SHAP on Random Forest
+
+```{r}
+shap_long <- as.data.frame(shap_vals) %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = -row_id,
+    names_to = "feature",
+    values_to = "shap"
+  )
+
+feature_order <- shap_long %>%
+  group_by(feature) %>%
+  summarise(mean_abs_shap = mean(abs(shap), na.rm = TRUE)) %>%
+  arrange(mean_abs_shap) %>%
+  pull(feature)
+
+shap_long$feature <- factor(shap_long$feature, levels = feature_order)
+
+ggplot(shap_long, aes(x = shap, y = feature)) +
+  geom_point(alpha = 0.25) +
+  labs(
+    title = "SHAP Summary Plot",
+    x = "SHAP Value",
+    y = "Feature"
+  )
+```
 
 ## Interpreting Results
-*give a live example of how you can interpret results for a specific sample*
+
+Example SHAP output 
+We can input this line:
+fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=examplegame, nsim=1000)
+
+And get something like this:
+"deaths 1.755, baronkills -6.695, firstBloodKillFalse -8.228, ..., goldEarned -2.382e-02, clearedPings 0.000"
 
 ## SHAP Real Example
 *feed the model a game one of us played*
@@ -363,6 +420,8 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 - Supports esports analytics, automated coaching, personalized tools
 
 ## Future Work
+* Temporal version
+* Making an actual application
 
 ## References
 
