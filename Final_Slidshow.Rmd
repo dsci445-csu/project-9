@@ -114,7 +114,7 @@ library(fastshap)
 library(kernlab)
 library(viridis)
 
-df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
+df <- read.csv("./data/d2_250_performance.csv")
 # predictors
 # Source: https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
 X <- df %>%
@@ -156,6 +156,7 @@ conf_matrix <- table(predicted = y_pred, actual = y_test)
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
 ```
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 # graph
 df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
@@ -208,11 +209,127 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 ```
 ## Fitting a Random Forest
 
+* Used in research for similar games
+* Performs its own feature selection
+* GINI Impurity used
+* 0.78% accuracy
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(parsnip)
+library(tidymodels)
+library(fastshap)
+
+df <- read.csv("./data/d2_500_10_performance.csv")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+
+nr <- nrow(df)
+index <- sample(1:nr, size = nr * 0.9)
+train <- df[index, ]
+test <- df[-index, ]
+
+nr <- nrow(train)
+index <- sample(1:nr, size = nr * 0.1)
+s_train <- train[index, ]
+
+rf_spec <-
+  rand_forest(
+    mtry = tune(),
+    min_n = tune(),
+    trees = 500
+  ) |>
+  set_engine("ranger", importance="impurity") |>
+  set_mode("classification")
+
+rf_wf <-
+  workflow() |>
+  add_model(rf_spec) |>
+  add_formula(win ~ .)
+
+folds <- vfold_cv(s_train, v=5, strata=win)
+
+rf_grid <- grid_regular(
+  mtry(range = c(2, 10)),
+  min_n(range = c(2, 20)),
+  levels = 6
+)
+
+rf_tuned <- tune_grid(
+  rf_wf,
+  resamples=folds,
+  grid = rf_grid,
+  metrics=metric_set(accuracy)
+)
+
+rf_results <- collect_metrics(rf_tuned)
+
+best_params <- select_best(rf_tuned, metric="accuracy")
+final_rf <- finalize_workflow(rf_wf, best_params)
+
+rf <- fit(final_rf, train)
+```
+
+```{r}
+
+pred <- predict(rf, new_data=test, type="class")
+
+eval_df <- tibble(
+  win = test$win,
+  .pred_class = pred$.pred_class
+)
+
+accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+table(eval_df$win, eval_df$.pred_class)
+```
+
+## Cross Validation on RF
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+acc_results <- rf_results |> dplyr::filter(.metric == "accuracy")
+
+ggplot(acc_results, aes(x = mtry, y = min_n, fill = mean)) +
+  geom_tile() +
+  labs(
+    title = "5-Fold CV Accuracy for Random Forest",
+    x = "mtry",
+    y = "min_n",
+    fill = "Accuracy"
+  )
+```
+
 ## RF Influential Predictors
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tibble)
+library(dplyr)
+library(ggplot2)
+
+imp <- rf |> extract_fit_engine() |> ranger::importance() |>
+  enframe(name="variable", value="importance") |>
+  arrange(desc(importance))
+
+ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Random Forest Predictor Importance",
+    x = "Predictor",
+    y = "Importance"
+  ) 
+
+```
+
 ## What is SHAP?
+* SHapley Additive exPlanations
+* Model-agnostic
+* Considers all possible feature combinations using Monte Carlo sampling
+* Explains feature contribution to a desicion
 
 ## SHAP on Random Forest
+
 
 ## Interpreting Results
 *give a live example of how you can interpret results for a specific sample*
