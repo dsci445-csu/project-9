@@ -37,7 +37,7 @@ League is the World's Largest E-sport and it's not close.
 ## Data Features:
 * Binary classification problem (win/loss)
 * Over 120 potential predictor columns in raw data
-* Our dataset used 20
+* Our dataset used 20 (kills, gold, etc)
 
 ## Turrets:
 * Initially accounted for roughly 89% of variance
