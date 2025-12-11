@@ -61,8 +61,7 @@ Nonlinear Models Dominate:
 library(parsnip)
 library(tidymodels)
 library(fastshap)
-df <- read.csv("data/d2_250_performance.csv")
-df$win <- as.integer(df$win == "True")
+df <- read.csv("./sample data/d2_250_performance.csv")
 df <- df[df$lane != "NONE", ]
 df <- subset(df, select=-turretsLost)
 df <- subset(df, select=-turretTakedowns)
