@@ -394,9 +394,9 @@ And get something like this:
 
 ## Results
 
-- GLM achieved **75.1%** accuracy  
-- Random Forest: **74.7%** accuracy
-- SVM: **72.0%** accuracy  
+- GLM achieved **75%** accuracy  
+- Random Forest: **78%** accuracy
+- SVM: **72%** accuracy  
 - Consistent top predictors: **deaths**, **goldEarned**  
 - Lowest predictors: **first blood–related stats**
 
