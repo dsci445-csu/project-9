@@ -26,7 +26,7 @@ output:
 ***
 
 ## Data Overview:
-- Data is from Riot Games developer API (first party source )from patch 25.22 (Nov 1-3, 2025).
+- Data is from Riot Games developer API (first party source) from patch 25.22 (Nov 1-3, 2025).
 - Used python data collector to collect two different API endpoints:
     - **Match Data** - end-of-game summary statistic (game outcome, characters played, ending gold quantity)
     - **Timelines Data** - 1-minute snapshot intervals of player location, inventory, events.
@@ -97,16 +97,12 @@ eval_df <- tibble(
 )
 
 svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
-print(paste("SVM Accuracy: ", sprintf("%1.2f", svm_accuracy)))
 
 # confusion matrix to check accuracy
 conf_matrix <- table(predicted = y_pred, actual = y_test)
-print("Confusion Matrix: ")
-print(conf_matrix)
 
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
-print(paste("Misclassification Rate: ", sprintf("%1.2f", misclass_rate)))
 ```
 
 ```{r}
