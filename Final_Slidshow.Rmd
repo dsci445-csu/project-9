@@ -401,7 +401,6 @@ And get something like this:
 - SVM: **72.0%** accuracy  
 - Consistent top predictors: **deaths**, **goldEarned**  
 - Lowest predictors: **first blood–related stats**
-- ***graph???
 
 ## Discussion
 
