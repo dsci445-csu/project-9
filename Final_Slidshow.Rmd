@@ -96,10 +96,10 @@ fourfoldplot(as.table(cf), color = c("yellow", "pink"), main = "Confusion Matrix
 
 
 ## Fitting an SVM
-* Goal: Predict game outcome (W/L) based on player performance metrics
-* Metrics: kills, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist
-* Performance: Accuracy = 0.72, Misclassification Rate: 27.64%
-* Confusion Matrix: Accurately vs. Falsely predicted
+* Works well with highly separated data (maximizes win and loss separation)
+* Features: kills, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist
+* Reason: Predicted to be most influential on game outcome
+* Performance: Accuracy = 0.72%, Misclassification Rate: 27.64%
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 # fitting SVM w/ accuracy report, misclassication rate, confusion matrix
