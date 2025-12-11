@@ -154,7 +154,7 @@ conf_matrix <- table(predicted = y_pred, actual = y_test)
 misclass_rate <- mean(y_pred != y_test) * 100
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, fig.width=6, fig.height=4, echo=FALSE, warning=FALSE, message=FALSE}
 # graph
 df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
 df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
@@ -204,6 +204,8 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
   ) +
   theme_minimal()
 ```
+
+
 ## Fitting a Random Forest
 
 * Used in research for similar games
