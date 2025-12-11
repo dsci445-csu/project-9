@@ -98,9 +98,6 @@ eval_df <- tibble(
 
 svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
 
-# confusion matrix to check accuracy
-conf_matrix <- table(predicted = y_pred, actual = y_test)
-
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
 ```
