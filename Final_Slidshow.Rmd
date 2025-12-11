@@ -271,7 +271,7 @@ final_rf <- finalize_workflow(rf_wf, best_params)
 rf <- fit(final_rf, train)
 ```
 
-```{r}
+```{r, echo=FALSE}
 
 pred <- predict(rf, new_data=test, type="class")
 
@@ -386,13 +386,12 @@ ggplot(shap_long, aes(x = shap, y = feature)) +
 
 Example SHAP output 
 We can input this line:
+
 fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=examplegame, nsim=1000)
 
 And get something like this:
-"deaths 1.755, baronkills -6.695, firstBloodKillFalse -8.228, ..., goldEarned -2.382e-02, clearedPings 0.000"
 
-## SHAP Real Example
-*feed the model a game one of us played*
+"deaths 1.755, baronkills -6.695, firstBloodKillFalse -8.228, ..., goldEarned -2.382e-02, clearedPings 0.000
 
 ## Results
 
