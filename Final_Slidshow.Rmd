@@ -53,9 +53,9 @@ Nonlinear Models Dominate:
 
 ## Fitting a GLM
 * Using logistic regression to predict game outcome against all of our player performance metrics (minus turrets)
-* 70/30 split between our train/test sets- Using our small data set (n=250 matches)
+* 70/30 split between our train/test sets- using our small data set (n=250 matches)
 * Built our GLM on the training set and applied to test data
-* Result: 75% accuracy- seen below from our confusion matrix
+* Result: 75% accuracy- seen from our confusion matrix
 
 ```{r, echo = FALSE, warning=FALSE, message=FALSE}
 library(parsnip)
@@ -89,6 +89,10 @@ glm_pred_class <- ifelse(glm_pred > 0.5, "True", "False")
 glm_pred_class <- factor(glm_pred_class, levels = levels(y_test))
 print(paste("GLM Test Accuracy: ",mean(glm_pred_class == y_test)))
 
+```
+## GLM Confusion Matrix
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 cf <- confusionMatrix(data = glm_pred_class, reference = y_test)
 fourfoldplot(as.table(cf), color = c("yellow", "pink"), main = "Confusion Matrix")
 
