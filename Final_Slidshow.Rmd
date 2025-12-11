@@ -350,15 +350,13 @@ shap_vals <- fastshap::explain(
 )
 ```
 
-```{r}
-print("Mean impact of deaths on game outcome:")
+We can extract things like impact of deaths on game outcome:
+```{r, echo=TRUE}
 mean(abs(shap_vals[ ,1]))
-
 ```
 
 ## SHAP on Random Forest
-
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 shap_long <- as.data.frame(shap_vals) %>%
   mutate(row_id = row_number()) %>%
   pivot_longer(
