@@ -11,7 +11,8 @@ output:
 
 ## Abstract
 <div class="abstract">
-  This project assesses multiple different ML approaches (GLM, SVM, RF) to create stable models across multiple cross validation folds that inform over 75% predictive success on our sample data.[Elaborate on results]
+  This project targets multiple different ML approaches (GLM, SVM, RF) to create stable models for prediction and assessment of League of Legends match outcome. Models were assessed across multiple cross validation folds that inform over 75% predictive success on our sample data. These models, chosen for interpretability, are able to provide gameplay insights for specific games using either inherent qualities--like gini impurity for the random forest--or with the assistance of SHAP (SHapley Additive exPlanations), a method that uses monte carlo sampling to provide the additive sum of contribution of each predictor to the overall outcome. 
+  After removing colinear terms like turrets destroyed, we found that deaths and gold earned were the two most powerful predictors of gameplay outcome. We believe this is because these factors align with a gameplay style built on consistency. This is further reinforced by our findings that so called "first blood factors" (a one-time event that often occurs toward the beginning of the game) were poor predictors of the final game outcome. This is counter to general community sentiment, where some players will refuse to continue playing the match after one team secures first blood objectives. Considering these factors, our findings can help players achieve higher average win rates by focusing on consistent and measurable improvements in their gameplay quality.
   
   
 </div>
