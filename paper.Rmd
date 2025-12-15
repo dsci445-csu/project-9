@@ -18,15 +18,17 @@ output:
 </div>
 ## 1. Introduction
 
-The game being focused on for this project is League of Legends, a complex, competitive 5v5 multiplayer online battle arena (MOBA) game. The company that created League of Legends, Riot Games, provides high-quality data through its API, gaining access to game data such as player performance and objectives. While there are existing websites to track player statistics such as match history and specific counter pick options, they mainly focus on surface-level statistics and outcomes, not how one’s decisions can influence the result of the game.
+The game being focused on for this project is League of Legends, a complex, competitive 5v5 multiplayer online battle arena (MOBA) game. Over the last decade, League of Legends has cemented itself as the most popular esport title, attracting millions of players each day to compete for their spot at the top. The game has extremely high global viewership for their annual tournament series. In 2024, the World Finals games reached a peak concurrent global viewership of over 50,000,000 according to lolesports [6]. As such, the value in applying statistical modelling techniques to gain a competitive advantage is high.
 
-The main focus of this project is to analyze and interpret player behavior and decision-making to determine how these patterns may impact the outcome of the game. By examining factors such as participation levels, whether their team had more objectives, and experience/gold levels over the course of the game, key behavioral patterns and the player’s impact on the game can be interpreted and identified.
+The company that created League of Legends, Riot Games, provides high-quality data through its API, gaining access to game data such as player performance and objectives. While there are existing websites to track player statistics such as match history and specific counter pick options, they mainly focus on surface-level statistics and outcomes, not how one’s decisions can influence the result of the game.
+
+The main focus of this project is to analyze and interpret player behavior and decision-making to determine how these patterns may impact the outcome of the game. By examining factors such as participation levels, whether their team had more objectives, and experience/gold levels over the course of the game, key behavioral patterns and the player’s impact on the game can be interpreted and identified. With these insights, it may be possible to assist professional teams or individual players to outperform the competition.
 
 
 ## 2. Methods and Analysis
 
 ## 2.1 Data
-All data was gathered through the Riot games developer API on patch 25.22, November 1st through 3rd, 2025. This was accomplished using a data collector written in python that collected corresponding game data from two different api endpoints. First, the Riot match data, which is composed of end-of-game summary statistics. This includes which team won the match, the characters (or Champions) played by each team, the ending gold quantity for each team, and other descriptive statistics. Second, the Riot timeline data, which includes snapshots of the game state in one-minute intervals throughout the match. This data includes (for every minute in the game) information such as the position of each player or inventory of each player. Finally, all data was collected from games played where the average MMR (match making rating) of the participating players was 'Diamond II', which consists of players in approximately the top 1.5% of skill. The primary motivation for this choice was to focus on high-quality yet still plentiful match data. Had a lower skill bracket been selected, the results would be less interpret-able within the context of an organized environment. Had a higher skill bracket been selected, data sparsity would have likely become a problem.
+All data was gathered through the Riot games developer API on patch 25.22, November 1st through 3rd, 2025. This was accomplished using a data collector written in python that collected corresponding game data from two different api endpoints. First, the Riot match data, which is composed of end-of-game summary statistics. This includes which team won the match, the characters (or Champions) played by each team, the ending gold quantity for each team, and other descriptive statistics. Second, the Riot timeline data, which includes snapshots of the game state in one-minute intervals throughout the match. This data includes (for every minute in the game) information such as the position of each player or inventory of each player. Finally, all data was collected from games played where the average MMR (match making rating) of the participating players was 'Diamond II', which consists of players in approximately the top 1.5% of skill rating. The primary motivation for this choice was to focus on high-quality yet still plentiful match data. Had a lower skill bracket been selected, the results would be less interpret-able within the context of an organized environment. Had a higher skill bracket been selected, data sparsity would have likely become a problem.
 
 Using the data described above, three primary data sets were collected for modelling and exploring data. First, a small set of n=250 matches (2,500 total players) was used for general data analysis and data exploration this was the 'small dataset'. Second, a larger set of n=5,000 (50,000 total players) made up the 'large dataset'. Both the small and large datasets consist of combined match and timeline data. Finally, a matches-only dataset n=50,000 (500,000 total players) collected on the "Diamond IV" skill bracket was used to gain insights on the impact of team composition on the overall win but did not directly contribute to our results.
 
@@ -52,31 +54,69 @@ kable(
 
 
 ## 2.2 Preprocessing
-The Riot Games developer API returns a highly nested sequence of DTOs (Data Transfer Objects). These structures contain match level, team level, as well as player level level data embedded within multiple, tightly coupled transfer layers, requiring complicated extraction before modeling. All desired JSON responses were flattened into a simpler form by isolating the relevant participant objects and merging them with corresponding match metadata. To accomplish this, data was cleaned using a python script.
+The Riot Games developer API returns a highly nested sequence of DTOs (Data Transfer Objects). These structures contain match level, team level, as well as player level level data embedded within multiple, tightly coupled transfer layers, requiring complicated extraction before modeling. All desired JSON responses were flattened into a simpler form by isolating the relevant participant objects and merging them with corresponding match metadata. To accomplish this, data was cleaned using a python script (matchcleaner.py).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+df <- read.csv("data/d2_500_10_performance.csv")
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select=-turretsLost)
+df <- subset(df, select=-turretTakedowns)
+df$position = NULL
+df$win <- factor(df$win)
+colnames(df)
+```
 
 ## 2.3 Model Evaluation
 Among studies published performing similar League of Legends prediction tasks with similar datasets, top performing models typically  used some sort of nonlinear architecture such as an RNN [4], or other form of deep neural network [3]. However, such an approach is not acceptable for our purposes as the extra predictive power comes at too great a detriment of interpretability. [5] Analyzed a set of model performances on NBA data and found that tree-based models such as random forests outperformed non-tree alternatives. Furthermore, a birds-eye analysis of remaining League of Legends-based papers reveals a similar story: Random forests and logistic regression often comprise the top performing linear models. 
 
+```{r}
+library(ggplot2)
+
+data <- data.frame(
+  Study = c(
+    "Gonzalez (2023)\nDeep Neural Network",
+    "Zamir et al. (2024)\nRNN",
+    "Silva et al. (2023)\nRNN (15m)",
+    "Chen et al. (2021)\nLogistic Regression"
+  ),
+  Accuracy = c(89.8, 86.7, 73.0, 60.24)
+)
+
+ggplot(data, aes(x = reorder(Study, Accuracy), y = Accuracy)) +
+  geom_bar(stat = "identity") +
+  labs(
+    x = "Study and Model",
+    y = "Accuracy (%)",
+    title = "Model Accuracy"
+  ) + ylim(0, 100)
+
+```
+
 Three options were chosen to fit and compare for the sake of the project: Random Forest, Logistic Regression, and Support Vector Machine models. Initially, these were fit with a small dataset in order to conserve needed compute time. Models were evaluated with a 70/30 train/test split and 5-fold cv for hyperparameter tunings.
 
 ```{r, echo=FALSE}
-library(knitr)
+library(ggplot2)
 
-kable(
-  data.frame(
-    `Model Type`      = c("Random Forest", "SVM", "GLM"),
-    `Num. Predictors` = c(23, 6, 23),
-    `Test Accuracy`   = c("74.7%", "73.5%", "75.1%")
-  ),
-  format = "latex",
-  booktabs = FALSE,
-  caption = "Model Evaluation"
+data <- data.frame(
+  Model_Type = c("Random Forest", "SVM", "GLM"),
+  Num_Predictors = c(23, 6, 23),
+  Test_Accuracy = c(74.7, 73.5, 75.1)
 )
+
+ggplot(data, aes(x = Model_Type, y = Test_Accuracy)) +
+  geom_bar(stat = "identity") +
+  labs(
+    x = "Model Type",
+    y = "Test Accuracy (%)",
+    title = "Test Accuracy by Initial Model Fit on Small Data"
+  ) +
+  coord_cartesian(ylim = c(68, 80))
+
 ```
 
-As can be seen above in table 2, the GLM model maintained highest test accuracy, while the SVM model was the lowest. However, the SVM model was trained on 6 predictors ('deaths', 'dragonKills', 'baronKills', 'firstBloodKill', 'firstBloodAssist', 'kills'), whereas GLM was trained on 23. 
+The above barchard depicts the test accuracy of each model type on a 70/30 split of the small dataset. Some additional changes to the input of each model was performed, restricting the number of predictors given to the SVM model to 6 ('deaths', 'dragonKills', 'baronKills', 'firstBloodKill', 'firstBloodAssist', 'kills'), which ultimately increased the accuracy of the model by removing dimensions which the SVM struggled with. The GLM and RF models were trained on the full set of 19 predictors. The GLM model outperformed the other two model types on the small dataset, achieving a test accuracy of 75.1%, trailed by the other two at 74.7% and 73.5% respectively.
 
-The following is the results from the Random Forest model, chosen for its interpretability.
+However, given the small difference in performance between GLM and RF models, we chose the RF model for more extensive work as it has better interpretability for the problem at hand. The following is the results from the Random Forest model:
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(parsnip)
@@ -116,9 +156,9 @@ rf_wf <-
 folds <- vfold_cv(s_train, v=5, strata=win)
 
 rf_grid <- grid_regular(
-  mtry(range = c(2, 10)),
-  min_n(range = c(2, 20)),
-  levels = 6
+  mtry(range = c(2, 20)),
+  min_n(range = c(4, 20)),
+  levels = 5
 )
 
 rf_tuned <- tune_grid(
@@ -144,9 +184,23 @@ eval_df <- tibble(
   .pred_class = pred$.pred_class
 )
 
-accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
-table(eval_df$win, eval_df$.pred_class)
+paste("Test Accuracy: ",  accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate)
+#table(eval_df$win, eval_df$.pred_class)
+
+
+cm <- table(eval_df$win, eval_df$.pred_class)
+cm_df <- as.data.frame(cm)
+colnames(cm_df) <- c("Actual", "Pred", "Count")
+
+ggplot(cm_df, aes(x = Pred, y = Actual, fill = Count)) +geom_tile() + geom_text(aes(label = Count)) +
+  labs(
+    title = "Prediction Confusion Matrix",
+    x = "Pred",
+    y = "Actual"
+  )
 ```
+
+Above we can see the performance of our model on the medium test set. This is an increase of 3-4 percentage points over the initial model, due mostly to having access to a larger train set. Importantly, the model performs similarly on positive and negative truth values, meaning it is well balanced.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 acc_results <- rf_results |> dplyr::filter(.metric == "accuracy")
@@ -160,6 +214,8 @@ ggplot(acc_results, aes(x = mtry, y = min_n, fill = mean)) +
     fill = "Accuracy"
   )
 ```
+
+Additionally, the model does not perform significantly different across various CV hyperparameters. This indicates the model is relatively stable overall.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(tibble)
@@ -181,11 +237,15 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 
 ```
 
-As seen above in f4, the random forest model achieves a high prediction accuracy with a similar number of false positives and false negatives. Furthermore, as seen in f3, we can see that deaths and gold earned play a significant role in influencing the outcome of games. First blood kill and some other statistics provide less insight. 
+Finally, as seen above, we can see feature importance calculated using GINI impurity. This is a major benefit of the RF model. The data reveals that deaths and goldEarned are both highly important predictors. This supports existing domain intuition that choosing a gameplan that maximizes the number of opportunities the player has throughout the game is vital. Deaths minimize such possibilities, and goldEarned allows the player to better capitalize on potential win conditions when they become available. First blood kill and assist, on the other hand, do not seem to be as important.
 
-## 2.4 Interpretability
+## 2.4 SHAP
 
-The approach used builds heavily on accurately classifying game outcomes to categorize samples as either win or defeat. However, in order to determine which factors led to the outcome of the match, SHAP (SHapley Additive exPlanations) was used to quantify each feature’s contribution to the model’s predictions. SHAP values provide a game-theoretic interpretation of model behavior by breaking down each each individual prediction into additive contributions from each feature. This allows interpretability in two ways:
+SHAP or (SHapley Additive exPlanations) is a way to explain the results of a machine-learning model by assigning components of the prediction to individual features. SHAP performs monte carlo sampling to measure the effects of a randomly selected permutation of the features, adding each feature one at a time, accumulating the delta contribution of each feature as it is added: Contributions are then averaged across all permutations to gain the monte carlo estimate. Not all SHAP variations use monte carlo sampling, however it is mandatory here as SHAP explanations are already by far the most computationally expensive part of this project.
+
+## 2.5 Interpretability
+
+The approach used builds heavily on accurately classifying game outcomes to categorize samples as either win or defeat. However, in order to determine which factors led to the outcome of the match, SHAP was used to quantify each feature’s contribution to the model’s predictions. SHAP values provide a game-theoretic interpretation of model behavior by breaking down each each individual prediction into additive contributions from each feature. This allows interpretability in two ways:
 
 - Global interpretability, where SHAP summarizes which features most strongly influence predictions across all matches
 - Local interpretability, where SHAP explains why the model predicted a win or loss for a specific match.
@@ -217,13 +277,13 @@ shap_vals <- fastshap::explain(
 )
 ```
 
-```{r}
-print("Mean impact of deaths on game outcome:")
-mean(abs(shap_vals[ ,1]))
+## 3. Results and Discussion
 
-```
+Model performance across the three supervised approaches initially showed that the GLM outperformed SVM and Random Forest approaches. However, we chose to use results obtained from the Random Forest model for interpretability.
 
-```{r}
+## 3.1 Global Interpretability
+
+```{r, echo=FALSE, warning=FALSE}
 shap_long <- as.data.frame(shap_vals) %>%
   mutate(row_id = row_number()) %>%
   pivot_longer(
@@ -243,35 +303,64 @@ shap_long$feature <- factor(shap_long$feature, levels = feature_order)
 ggplot(shap_long, aes(x = shap, y = feature)) +
   geom_point(alpha = 0.25) +
   labs(
-    title = "SHAP Summary Plot",
+    title = "SHAP Results (Medium Dataset)",
     x = "SHAP Value",
     y = "Feature"
   )
 ```
 
+Both SHAP and the random forest internal importance ranking highlight deaths and goldEarned as the two most influential predictors. This is an expected result as the amount of gold earned throughout the course of a match directly leads to the player with high gold earned purchasing more items, and therefore having more frequent access to victory conditions thoughout the match. What is surpising, however, is that the internal estimate from the random forest model holds the total number of deaths as the strongest predictor. Deaths have two primary side-effects throughout the course of the match. First, the enemy player responsible for the death is rewarded with gold, increasing their total gold earned and providing them with more opportunity to engage with victory conditions. However, this relationship is more directly captured with the goldEarned statistic. The second side-effect of a death is that you lose the ability to interact with any aspect of the game for 6-56 seconds (based on level). This directly impacts the player's presence within the game. In domain-specific terms: deaths decrease your tempo. 
 
-## 3. Results and Discussion
+Futhermore, the above figure seems to reveal a slight 'right hand' skew to the impact of deaths on game outcome. This means that in extreme cases, low numbers of deaths seem to have a greater positive impact than the magnitude of the negative impact of high numbers of deaths. 
 
-Model performance across the three supervised approaches shows that logistic regression (GLM) achieved the highest test accuracy at 75.1%, followed closely by the random forest at 74.7%, while the SVM trailed slightly at 73.5%.
+Other notable features of the SHAP importance graph include the predictor baronKills. This predictor represents the number of times a team has achieved a baron kill, which is often thought of as a "win condition", meaning it massively increases the chances of your winning the game. It is very much akin to something like promoting a pawn to a queen in Chess, where it doesnt outright win you anything but regardless has a massive positive impact on your chances of winning the game. This can be seen by how baronKills has the third highest maximum SHAP value, right behind goldEarned and deaths. Notably, the predictor lacks many low SHAP values, hinting that while it provides a massive strategic advantage, achieving a baron kill is not required for winning the game in the same way that your goldEarned is. In other words, promoting a pawn to a queen is not the only way to win a game of Chess.
 
-Vitally, both SHAP and the random forest internal importance ranking highlight deaths and goldEarned as the two most influential predictors. This is an expected result as the amount of gold earned throughout the course of a match directly leads to the player with high gold earned purchasing more items, and therefore having more frequent access to victory conditions thoughout the match. What is surpising, however, is that the internal estimate from the random forest model holds the total number of deaths as the strongest predictor. Deaths have two primary side-effects throughout the course of the match. First, the enemy player responsible for the death is rewarded with gold, increasing their total gold earned and providing them with more opportunity to engage with victory conditions. However, this relationship is more directly captured with the goldEarned statistic. The second side-effect of a death is that you lose the ability to interact with any aspect of the game for 6-56 seconds (based on level) [riot wiki citation]. This directly impacts the player's presence within the game. In domain-specific terms: deaths decrease your tempo. 
+Finally,, first blood-related statistics were commonly ranked lowest for importance within the models. This suggests that early, isolated advantages do not often lead to determining the match outcome. This is counter to some community sentiment and may be the grounds for future analysis.
 
-On the other hand, first blood-related statistics were commonly ranked lowest for importance within the models. This suggests that early, isolated advantages do not often lead to determining the match outcome. This is counter to some community sentiment and may be the grounds for future analysis.
+## 3.2 Local Interpretability
+
+```{r, echo=FALSE}
+shapindividual <- fastshap::explain(rf, X=X, pred_wrapper=f_fun, newdata=X[13, ], nsim=1000,adjust=TRUE)
+
+shap_df <- as.data.frame(shapindividual) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "feature",
+    values_to = "shap_value"
+  ) |>
+  arrange(shap_value)
+
+ggplot(shap_df, aes(x = shap_value, y = reorder(feature, shap_value))) +
+  geom_point() +
+  geom_vline(xintercept = 0, linetype="dashed") +
+  labs(
+    title = "Local Interpretability: Single Sample",
+    x = "SHAP value",
+    y = "Predictor"
+  )
+```
+
+We can view the predictor contributions for an individual sample to provide targeted feedback. This provides local, targeted feedback and has direct applications for things such as personalized coaching tools and gameplay feedback systems. Above is a figure detailing the SHAP explanation for the values of a specific game. For example, if we see that deaths and baron kills contributed very positively to the eventual prediction, wheras timeCCingOthers and neutralMinionsKilled were weak points in the gameplay, we can provide actionable feedback to the player: they should continue their habits of not dying while attempting to kill more neutral minions and CC more enemies. Alternatively, if we see that the goldEarned and deaths are both negatively impacting the outcome of a game, we could give the feedback to re-assess the entire strategy. 
+
 
 ## 4. Conclusion
 
-This project demonstrates a pipeline and plausible solution for integrating SHAP and machine learning maodels to create interpretable, actionable insights about League of Legends match wins. WOrking with a high-level dataset, all three models got high predictive accuracy (even when compared to similar projects in the same area). Vitally, SHAP provided a highly detailed and robust vision of the key parts of the dataset, identifying gold, kills, deaths, vision control and infulential factors and first blood statistics as non-influential. 
+This project demonstrates a pipeline and plausible solution for integrating SHAP and machine learning maodels to create interpretable, actionable insights about League of Legends match wins. Working with a high-level dataset, all three models got high predictive accuracy (even when compared to similar projects in the same area). Vitally, SHAP provided a highly detailed and robust vision of the key parts of the dataset, identifying gold, kills, deaths, vision control and infulential factors and first blood statistics as non-influential. 
 
 The hope is that the work done in this project can help form a foundation for future market-targeted platforms such as analytical systems to support competitive teams in esports, automated coaching for players, or personalized platforms such as the already existent mobalytics.gg. 
   
 ## References
 
-[1] Zamri, M. Asyhraf Zamir, et al. “Online Game Outcome Prediction Model Using Weighted-Based Feature Approach.” Fusion: Practice and Applications (FPA), vol. 15, no. 2, 2024, pp. 132–144. DOI: https://doi.org/10.54216/FPA.150212
+[1] M. A. Zamri, M. A. Zamir, et al., “Online game outcome prediction model using weighted-based feature approach,” Fusion: Practice and Applications (FPA), vol. 15, no. 2, pp. 132–144, 2024, doi: 10.54216/FPA.150212.
 
-[2] J. A. Hitar-García, L. Morán-Fernández and V. Bolón-Canedo, "Machine Learning Methods for Predicting League of Legends Game Outcome," in IEEE Transactions on Games, vol. 15, no. 2, pp. 171-181, June 2023, doi: 10.1109/TG.2022.3153086.
+[2] J. A. Hitar-García, L. Morán-Fernández, and V. Bolón-Canedo, “Machine learning methods for predicting League of Legends game outcome,” IEEE Transactions on Games, vol. 15, no. 2, pp. 171–181, Jun. 2023, doi: 10.1109/TG.2022.3153086.
 
-[3] https://github.com/reneleogp/ML-Prediction-LoL
+[3] R. Leo, “ML-Prediction-LoL,” GitHub repository. [Online]. Available: https://github.com/reneleogp/ML-Prediction-LoL
 
-[4] Antonio Luis Cardoso Silva et al. "Continuous Outcome Prediction of League of Legends Competitive Matches Using Recurrent Neural Networks." (2018).
+[4] A. L. C. Silva et al., “Continuous outcome prediction of League of Legends competitive matches using recurrent neural networks,” 2018. [Online]. Available: https://arxiv.org/abs/1806.09802
 
-[5] https://link.springer.com/content/pdf/10.1007/s10115-024-02092-9.pdf
+(if applicable; otherwise cite as unpublished manuscript).
+
+[5] Springer, “Continuous outcome prediction of League of Legends competitive matches,” 2024. [Online]. Available: https://link.springer.com/content/pdf/10.1007/s10115-024-02092-9.pdf
+
+[6] LoL Esports, “Official announcement,” X (formerly Twitter), Nov. 2024. [Online]. Available: https://x.com/lolesports/status/1859295721956024521

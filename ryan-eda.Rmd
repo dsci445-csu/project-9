@@ -250,8 +250,6 @@ example
 ```
 
 ```{r}
-set.seed(67)
-
 testexplain <- fastshap::explain(rf, X=X_test, pred_wrapper=predict_fn, newdata=example, nsim=1000,adjust=TRUE)
 testexplain[1, ]
 ```
