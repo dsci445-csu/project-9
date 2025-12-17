@@ -117,7 +117,7 @@ First blood kills and first blood assists only exist during a first blood event,
 Game Outcome Based on Gold Earned Boxplot
 The median gold earned for wins is higher than the median gold earned for losses, suggesting that higher gold earned is associating with winning. The distribution of gold earned based on wins has several outliers, with values above 20,000 gold. Overall, gold earned is a strong indicator for winning a game.
 
-## 2.3 Model Evaluation
+## 2.4 Model Evaluation
 Among studies published performing similar League of Legends prediction tasks with similar datasets, top performing models typically  used some sort of nonlinear architecture such as an RNN [4], or other form of deep neural network [3]. However, such an approach is not acceptable for our purposes as the extra predictive power comes at too great a detriment of interpretability. [5] Analyzed a set of model performances on NBA data and found that tree-based models such as random forests outperformed non-tree alternatives. Furthermore, a birds-eye analysis of remaining League of Legends-based papers reveals a similar story: Random forests and logistic regression often comprise the top performing linear models. 
 
 ```{r}
@@ -290,11 +290,11 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 
 Finally, as seen above, we can see feature importance calculated using GINI impurity. This is a major benefit of the RF model. The data reveals that deaths and goldEarned are both highly important predictors. This supports existing domain intuition that choosing a gameplan that maximizes the number of opportunities the player has throughout the game is vital. Deaths minimize such possibilities, and goldEarned allows the player to better capitalize on potential win conditions when they become available. First blood kill and assist, on the other hand, do not seem to be as important.
 
-## 2.4 SHAP
+## 2.5 SHAP
 
 SHAP or (SHapley Additive exPlanations) is a way to explain the results of a machine-learning model by assigning components of the prediction to individual features. SHAP performs monte carlo sampling to measure the effects of a randomly selected permutation of the features, adding each feature one at a time, accumulating the delta contribution of each feature as it is added: Contributions are then averaged across all permutations to gain the monte carlo estimate. Not all SHAP variations use monte carlo sampling, however it is mandatory here as SHAP explanations are already by far the most computationally expensive part of this project.
 
-## 2.5 Interpretability
+## 2.6 Interpretability
 
 The approach used builds heavily on accurately classifying game outcomes to categorize samples as either win or defeat. However, in order to determine which factors led to the outcome of the match, SHAP was used to quantify each feature’s contribution to the model’s predictions. SHAP values provide a game-theoretic interpretation of model behavior by breaking down each each individual prediction into additive contributions from each feature. This allows interpretability in two ways:
 
