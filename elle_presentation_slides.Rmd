@@ -58,10 +58,11 @@ library(viridis)
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 # predictors
 # https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
-X <- df %>%
-select(deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist, kills) %>% 
-mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
-       firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
+X <- df |>
+  select(deaths, dragonKills, baronKills,
+         firstBloodKill, firstBloodAssist, kills) |>
+  mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
+         firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
 # target = outcome of game
 y <- as.factor(df$win)
 # split into training and test sets (70 train 30 test)
@@ -74,10 +75,10 @@ X_test <- X[-split_data, ]
 y_test <- y[-split_data]
 # scaling X
 # https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
-X_train_scaled = scale(X_train)
-X_test_scaled = scale(X_test,
-                      center = attr(X_train_scaled, "scaled:center"),
-                      scale = attr(X_train_scaled, "scaled:scale"))
+X_train_scaled <- scale(X_train)
+X_test_scaled <- scale(X_test,
+                       center = attr(X_train_scaled, "scaled:center"),
+                       scale = attr(X_train_scaled, "scaled:scale"))
 # convert to df to train on svm
 df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
@@ -93,9 +94,11 @@ eval_df <- tibble(
 )
 
 svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+print(svm_accuracy)
 
 # misclassifcation rate: % of wrong predictions
 misclass_rate <- mean(y_pred != y_test) * 100
+print(misclass_rate)
 ```
 
 ```{r}
@@ -118,7 +121,7 @@ test <- df[-split_data, ]
 # converts df to numeric matrix for SVM
 # win ~ = predict win using all other columns
 X_train_numeric <- model.matrix(win ~ . -1, data = train) |>
-                                as.data.frame()
+  as.data.frame()
 # remove columns with 0 variance (causing lots of errors)
 X_train_numeric <- X_train_numeric |> select(where(~ var(.) != 0))
 # stores target variable (win) for training (True or False)
@@ -126,12 +129,15 @@ y_train <- train$win
 # train svm with ksvm (kernel package) instead of svm
 # converts df to numeric matrix with y_train as the target
 # C = regulation param
-svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train, kernel = "rbfdot", C = 1, kpar = "automatic", prob.model = TRUE))
+svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train,
+                        kernel = "rbfdot", C = 1, kpar = "automatic",
+                        prob.model = TRUE))
 
 # how to get predictions from model for shap
 # fastshap requires prediction functon
 pred_wrapper <- function(object, newdata) {
-  predict(object, newdata = as.matrix(newdata), type = "probabilities")[, "True"]
+  predict(object, newdata = as.matrix(newdata),
+          type = "probabilities")[, "True"]
 }
 
 set.seed(123)
@@ -139,11 +145,14 @@ set.seed(123)
 # helps determine features that are most important in determining
 # explain() calculates aprox SHAP values for each feature in X_train_numeric
 # output = matrix of aprox SHAP values
-imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_train, pred_wrapper = pred_wrapper, nsim = 20) |>
-                         as.data.frame() |>
-                         summarise(across(everything(), ~ mean(abs(.)))) |> # mean absoluite SHAP value
-                         tidyr::pivot_longer(cols = everything(), names_to = "variable", values_to = "importance") |> # converts from column = features to row = features
-                         arrange(desc(importance))
+imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric,
+                         y = y_train, pred_wrapper = pred_wrapper, nsim = 20) |>
+  as.data.frame() |>
+  summarise(across(everything(), ~ mean(abs(.)))) |> # mean absoluite SHAP value
+  tidyr::pivot_longer(cols = everything(),
+                      names_to = "variable",
+                      values_to = "importance") |> # converts from column = features to row = features
+  arrange(desc(importance))
 
 ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
   geom_col(fill = "blue") +
@@ -158,9 +167,9 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 
 Not part of the presentation slides, creating paper's EDA here for ease
 ## 2.3 Exploratory Data Analysis
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r}
 # W/L Distribution
-# df = read.csv("d2_250_performance.csv")
+# df -> read.csv("d2_250_performance.csv")
 ggplot(df, aes(x = win)) +
   geom_bar(fill = c("#c41616", "#3eaf3e")) +
   labs(title = "Win/Loss Distribution",
@@ -169,11 +178,18 @@ ggplot(df, aes(x = win)) +
 
 # Summary of variables used in SVM
 # can be used to show contribution of variables -->
-summary(df[, c("deaths", "kills", "dragonKills", "baronKills", "firstBloodKill", "firstBloodAssist")])
+summary(df[, c("deaths", "kills", "dragonKills",
+               "baronKills", "firstBloodKill", "firstBloodAssist")])
+
+df$win <- factor(df$win)
+# Look at new variable, goldEarned, which was the 2nd variable in SVM model that had the most influence on game outcome
+ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
+  geom_boxplot()
 ```
-Based on the Win/Loss Distribution graph, it is clear that this dataset is almost perfectly balanced, and not heavily scewed towards either Win or Loss.
+Based on the Win/Loss Distribution graph, it is clear that this dataset is almost perfectly balanced, not heavily scewed towards either Win or Loss.
 Summary table findings:
 * Deaths and kills both have wide ranges: deaths has a range of 0-23, and kills has a range of 0-48. Due to their large variability, we can infer these features have a major impact of game outcomes. 
 * DragonKills and baronKills happen less frequently with a median of 0 for both, and on average are not completed to their maximum level (not all dragons and barons that can spawn are killed each game).
 * First blood kill and first blood assists only exist for a first blood event, which typically occurs within the first 5-10 minutes of the game (estimate). Because these features only exist for one event, they have little to no impact on the outcome of the game.
+Game Outcome Based on Gold Earned Boxplot
 
