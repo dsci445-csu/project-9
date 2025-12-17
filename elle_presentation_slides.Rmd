@@ -43,7 +43,7 @@ output:
 ***
 
 ## Fitting an SVM
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
 library(e1071)
 library(dplyr)
 library(tidyr)
@@ -84,7 +84,6 @@ df_train <- data.frame(y = factor(y_train), X_train_scaled)
 df_test <- data.frame(X_test_scaled)
 # train svm
 svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
-plot(svm_model)
 y_pred <- predict(svm_model, newdata = df_test)
 
 # accuracy 
@@ -101,7 +100,7 @@ misclass_rate <- mean(y_pred != y_test) * 100
 print(misclass_rate)
 ```
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
 df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
 df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
 df$lane <- as.factor(df$lane)
@@ -167,9 +166,9 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 
 Not part of the presentation slides, creating paper's EDA here for ease
 ## 2.3 Exploratory Data Analysis
-```{r, fig.show='hold'}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 # W/L Distribution
-# add line to paper: df -> read.csv("pathto\d2_250_performance.csv")
+# add line to paper: df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
 ggplot(df, aes(x = win)) +
   geom_bar(fill = c("#c41616", "#3eaf3e")) +
   labs(title = "Win/Loss Distribution",
@@ -178,24 +177,27 @@ ggplot(df, aes(x = win)) +
 
 # Summary of variables used in SVM
 # can be used to show contribution of variables -->
+df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
+df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
 summary(df[, c("deaths", "kills", "dragonKills",
                "baronKills", "firstBloodKill", "firstBloodAssist")])
 
-df$win <- factor(df$win)
 # Look at new variable, goldEarned, which was the 2nd variable in SVM model that had the most influence on game outcome
-goldEarned_vis <- ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
+ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
   geom_boxplot() +
-  scale_fill_manual(values = c("False" = "blue",
-                               "True" = "purple"))
-print(goldEarned_vis)
+  scale_fill_manual(values = c("False" = "#c41616",
+                               "True" = "#3eaf3e")) +
+  labs(title = "Game Outcome by Gold Earned",
+       x = "Win",
+       y = "Gold Earned")
 ```
 W/L Distribution
 The Win/Loss distribution shows that the dataset is balanced, because there are almost an equal number of wins and losses. This balance is crucial for effectively training classification models, as it prevents bias and greatly affects model performance and accuracy.
 
-Summary table of 6 variables used to SVM
-* Deaths and kills both have wide ranges: deaths has a range of 0-23, and kills has a range of 0-48. Due to their large variability, we can infer these features have a major impact of game outcomes. 
-* DragonKills and baronKills happen less frequently with a median of 0 for both, and on average are not completed to their maximum level (not all dragons and barons that can spawn are killed each game).
-* First blood kill and first blood assists only exist for a first blood event, which typically occurs within the first 5-10 minutes of the game (estimate). Because these features only exist for one event, they have little to no impact on the outcome of the game.
+(In paper, create mock table for more visual appeal)
+From the summary table of the 6 variables used in our SVM, it's observed that deaths and kills both have wide ranges, with deaths ranging from 0-23 and kills ranging from 0-48. Due to their large variability, we can infer that these features have a major impact on game outcome. 
+Dragon kills and baron kills occur less frequently, with a median of 0 for both, and on average, are not completed to their maximum potential, as not all dragons and barons that can spawn are killed in each game.
+First blood kills and first blood assists only exist during a first blood event, which typically occurs within the first 10 minutes of the game. Because these features only exist for a single event, they likely have little to no impact on the outcome of the game.
 
 Game Outcome Based on Gold Earned Boxplot
-
+The median gold earned for wins is higher than the median gold earned for losses, suggesting that higher gold earned is associating with winning. The distribution of gold earned based on wins has several outliers, with values above 20,000 gold. Overall, gold earned is a strong indicator for winning a game.
