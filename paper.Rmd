@@ -1,6 +1,6 @@
 ---
 title: Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
-author: "Ryan Stevens, Elle Isabel Angell, Nick Li, Coleman Garnier"
+author: "Ryan Stevens, Elle Angell, Nick Li, Coleman Garnier"
 output:
   pdf_document: default
   html_document:
@@ -66,6 +66,7 @@ df$win <- factor(df$win)
 colnames(df)
 ```
 
+
 ## 2.3 Exploratory Data Analysis
 The data was explored first by the distribution of wins and losses, examining variables that were selected for our SVM model, and analzying the impact of gold earned on game outcome. This helps identify features that have potential to be strong predictors for game outcome.
 
@@ -116,6 +117,7 @@ First blood kills and first blood assists only exist during a first blood event,
 
 Game Outcome Based on Gold Earned Boxplot
 The median gold earned for wins is higher than the median gold earned for losses, suggesting that higher gold earned is associating with winning. The distribution of gold earned based on wins has several outliers, with values above 20,000 gold. Overall, gold earned is a strong indicator for winning a game.
+
 
 ## 2.4 Model Evaluation
 Among studies published performing similar League of Legends prediction tasks with similar datasets, top performing models typically  used some sort of nonlinear architecture such as an RNN [4], or other form of deep neural network [3]. However, such an approach is not acceptable for our purposes as the extra predictive power comes at too great a detriment of interpretability. [5] Analyzed a set of model performances on NBA data and found that tree-based models such as random forests outperformed non-tree alternatives. Furthermore, a birds-eye analysis of remaining League of Legends-based papers reveals a similar story: Random forests and logistic regression often comprise the top performing linear models. 
