@@ -160,6 +160,7 @@ Not part of the presentation slides, creating paper's EDA here for ease
 ## 2.3 Exploratory Data Analysis
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 # W/L Distribution
+# df = read.csv("d2_250_performance.csv")
 ggplot(df, aes(x = win)) +
   geom_bar(fill = c("#c41616", "#3eaf3e")) +
   labs(title = "Win/Loss Distribution",
@@ -170,60 +171,9 @@ ggplot(df, aes(x = win)) +
 # can be used to show contribution of variables -->
 summary(df[, c("deaths", "kills", "dragonKills", "baronKills", "firstBloodKill", "firstBloodAssist")])
 ```
-Based on the Win/Loss Distribution graph, it is clear that this dataset is not heavily scewed towards either Wins or Losses, it's almost perfectly balanced between the two.
+Based on the Win/Loss Distribution graph, it is clear that this dataset is almost perfectly balanced, and not heavily scewed towards either Win or Loss.
 Summary table findings:
 * Deaths and kills both have wide ranges: deaths has a range of 0-23, and kills has a range of 0-48. Due to their large variability, we can infer these features have a major impact of game outcomes. 
 * DragonKills and baronKills happen less frequently with a median of 0 for both, and on average are not completed to their maximum level (not all dragons and barons that can spawn are killed each game).
 * First blood kill and first blood assists only exist for a first blood event, which typically occurs within the first 5-10 minutes of the game (estimate). Because these features only exist for one event, they have little to no impact on the outcome of the game.
 
-```{r}
-# SVM cross-validation graph
-# svm_spec <-
-#   svm_rbf(
-#     cost = tune(),
-#    rbf_sigma = tune(),
-# ) |>
-#  set_engine("kernlab") |>
-#  set_mode("classification")
-
-#svm_recipe <- recipe(win ~ ., data=train) %>%
-#  step_dummy(all_nominal_predictors()) %>%
-#  step_zv(all_predictors()) %>%
-#  step_normalize(all_numeric_predictors())
-
-#svm_wf <-
-#  workflow() |>
-#  add_model(svm_spec) |>
-#  add_recipe(svm_recipe)
-
-# cross-validation
-# folds <- vfold_cv(train, v = 2, strata = win)
-
-#svm_grid <- grid_regular(
-#  cost(range = c(0.01, 100), trans = log10_trans()),
-#  rbf_sigma(range = c(0.01, 100), trans = log10_trans()),
-#  levels = 10
-#)
-
-#svm_tuned <- tune_grid(
-#  svm_wf,
-#  resamples = folds,
-#  grid = svm_grid,
-#  metrics = metric_set(accuracy)
-#)
-#svm_results <- collect_metrics(svm_tuned)
-#acc_results <- svm_results |> dplyr::filter(.metric == "accuracy")
-
-# ggplot(acc_results, aes(x = cost, y = rbf_sigma, fill = mean)) +
-#  geom_tile() +
-#  geom_point(color = "white", size = 4) +
-#  scale_fill_viridis_c(option = "C") +
-#  scale_x_log10() +
-#  scale_y_log10() +
-#  labs(
-#     title = "5-Fold CV Accuracy for SVM (RBF Kernel)",
-#     x = "cost",
-#     y = "rbf_sigma",
-#     fill = "Accuracy"eric %>% select(where(~ var(.) != 0))
-#   )
-```
