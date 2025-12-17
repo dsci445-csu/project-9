@@ -96,7 +96,6 @@ kable(
   booktabs = FALSE,
   caption = "Summary of SVM Predictor Variables"
 )
-)
 
 ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
   geom_boxplot() +
