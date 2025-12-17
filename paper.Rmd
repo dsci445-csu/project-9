@@ -66,6 +66,57 @@ df$win <- factor(df$win)
 colnames(df)
 ```
 
+## 2.3 Exploratory Data Analysis
+The data was explored first by the distribution of wins and losses, examining variables that were selected for our SVM model, and analzying the impact of gold earned on game outcome. This helps identify features that have potential to be strong predictors for game outcome.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
+ggplot(df, aes(x = win)) +
+  geom_bar(fill = c("#c41616", "#3eaf3e")) +
+  labs(title = "Win/Loss Distribution",
+       x = "Win",
+       y = "Count")
+
+df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
+df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
+
+library(knitr)
+# mock table of summary(df(vars))
+kable(
+  data.frame(
+    Event = c("Deaths", "Kills", "Dragon Kills",
+              "Baron Kills", "First Blood Kill", "First Blood Assist"),
+    Min = c(0, 0, 0, 0, 0, 0),
+    Median = c(6.5, 6.0, 0, 0, 0, 0),
+    Mean = c(6.93, 7.00, 0.33, 0.07, 0.09, 0.12),
+    Max = c(23, 48, 5, 2, 1, 1)
+  ),
+  format = "latex",
+  booktabs = FALSE,
+  caption = "Summary of SVM Predictor Variables"
+)
+)
+
+ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("False" = "#c41616",
+                               "True" = "#3eaf3e")) +
+  labs(title = "Game Outcome by Gold Earned",
+       x = "Win",
+       y = "Gold Earned")
+```
+
+W/L Distribution
+The Win/Loss distribution shows that the dataset is balanced, because there are almost an equal number of wins and losses. This balance is crucial for effectively training classification models, as it prevents bias and greatly affects model performance and accuracy.
+
+Summary of SVM Predictor Variables
+From the summary table of the 6 variables used in our SVM, it's observed that deaths and kills both have wide ranges, with deaths ranging from 0-23 and kills ranging from 0-48. Due to their large variability, we can infer that these features have a major impact on game outcome. 
+Dragon kills and baron kills occur less frequently, with a median of 0 for both, and on average, are not completed to their maximum potential, as not all dragons and barons that can spawn are killed in each game.
+First blood kills and first blood assists only exist during a first blood event, which typically occurs within the first 10 minutes of the game. Because these features only exist for a single event, they likely have little to no impact on the outcome of the game.
+
+Game Outcome Based on Gold Earned Boxplot
+The median gold earned for wins is higher than the median gold earned for losses, suggesting that higher gold earned is associating with winning. The distribution of gold earned based on wins has several outliers, with values above 20,000 gold. Overall, gold earned is a strong indicator for winning a game.
+
 ## 2.3 Model Evaluation
 Among studies published performing similar League of Legends prediction tasks with similar datasets, top performing models typically  used some sort of nonlinear architecture such as an RNN [4], or other form of deep neural network [3]. However, such an approach is not acceptable for our purposes as the extra predictive power comes at too great a detriment of interpretability. [5] Analyzed a set of model performances on NBA data and found that tree-based models such as random forests outperformed non-tree alternatives. Furthermore, a birds-eye analysis of remaining League of Legends-based papers reveals a similar story: Random forests and logistic regression often comprise the top performing linear models. 
 
