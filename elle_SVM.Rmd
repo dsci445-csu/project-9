@@ -1,5 +1,0 @@
-# convert python SVM model to Rmd
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-# merge matches and timelines data
-
-```

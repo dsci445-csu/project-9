@@ -43,10 +43,6 @@ output:
 ***
 
 ## Fitting an SVM
-- Goal: Predict game outcome (W/L) based on player performance metrics.
-- Metrics: kills, deaths, dragonKills, baronKills, firstBloodKill, firstBloodAssist
-- Performance: Accuracy = 0.72, Misclassifcation Rate: 27.64%
-- Confusion matrix shows correctly and falsely predicted win and losses
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(e1071)
 library(dplyr)
@@ -150,7 +146,7 @@ imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric, y = y_tra
                          arrange(desc(importance))
 
 ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
-  geom_col(fill ="blue") +
+  geom_col(fill = "blue") +
   coord_flip() +
   labs(
     title = "SVM Predictor Importance",
@@ -159,6 +155,17 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
   ) +
   theme_minimal()
 ```
+
+Not part of the presentation slides, creating paper's EDA here for ease
+## 2.3 Exploratory Data Analysis
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(df, aes(x = win)) +
+  geom_bar(fill = c("#c41616", "#3eaf3e")) +
+  labs(title = "Win/Loss Distribution",
+       x = "Win",
+       y = "Count")
+```
+Based on the Win/Loss Distribution graph, it is clear that this dataset is not heavily scewed towards Wins or Losses, yet it's almost perfectly balanced.
 
 ```{r}
 # SVM cross-validation graph
