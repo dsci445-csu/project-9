@@ -68,7 +68,7 @@ colnames(df)
 
 
 ## 2.3 Exploratory Data Analysis
-The data was explored first by the distribution of wins and losses, examining variables that were selected for our SVM model, and analzying the impact of gold earned on game outcome. This helps identify features that have potential to be strong predictors for game outcome.
+The data was explored first by the distribution of wins and losses, examining variables that were selected for our SVM model, and analyzing the impact of gold earned on game outcome. This helps identify features that have potential to be strong predictors for game outcome.
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
