@@ -1,0 +1,219 @@
+---
+title: "DSCI 445 Final Slideshow"
+author: "By Nick Li, Ryan Stevens, Elle Angell, Coleman Garnier"
+output:
+  ioslides_presentation:
+    widescreen: true
+    incremental: false
+---
+
+# Actionable League of Legends Game Outcome Prediction Using Machine Learning Methods
+
+## Motivation:
+- League of Legends is a massively popular and competitive online 5v5 multiplayer online battle area (MOBA) game.
+- Riot Games provides public high-quality data through its API.
+    - Gain access to game data such as player performance and objectives.
+- Existing websites focus on surface-level information (match history, specific counter picks), not the impact on player decision-making.
+- Goal: Analyze and interpret player behavior to determine how these patterns influence the outcome of the game.
+- Focus: Factors such as key behavioral patterns, player participation, objectives, and experience/gold levels.
+
+***
+
+## Research Questions:
+1. Which data best accounts for the outcome of a specific match?
+2. Is it possible to provide meaningful feedback to a player on a game using a model?
+
+***
+
+## Data Overview:
+- Data is from Riot Games developer API (first party source) from patch 25.22 (Nov 1-3, 2025).
+- Used python data collector to collect two different API endpoints:
+    - **Match Data** - end-of-game summary statistic (game outcome, characters played, ending gold quantity)
+    - **Timelines Data** - 1-minute snapshot intervals of player location, inventory, events.
+- Highly nested JSONL, requires precise extraction.
+- Collected from games where average matchmatking of players was 'Diamond II' (top 1.5% skill).  
+
+***
+
+## Our Data:
+* 'Small' Dataset n = 250 matches (2,500 players)
+* 'Medium' Dataset n = 5,000 matches (50,000 players)
+* 'Large' Dataset n = 50,000 (n=500,000 players)
+
+***
+
+## Fitting an SVM
+```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+library(e1071)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(tidymodels)
+library(ggplot2)
+library(parsnip)
+library(fastshap)
+library(kernlab)
+library(viridis)
+
+df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
+# predictors
+# https://stackoverflow.com/questions/33930188/convert-dataframe-column-to-1-or-0-for-true-false-values-and-assign-to-dataf
+X <- df |>
+  select(deaths, dragonKills, baronKills,
+         firstBloodKill, firstBloodAssist, kills) |>
+  mutate(firstBloodKill = as.integer(as.logical(firstBloodKill)),
+         firstBloodAssist = as.integer(as.logical(firstBloodAssist)))
+# target = outcome of game
+y <- as.factor(df$win)
+# split into training and test sets (70 train 30 test)
+set.seed(67)
+nrow <- nrow(df)
+split_data <- sample(1:nrow, size = nrow * 0.7)
+X_train <- X[split_data, ]
+y_train <- y[split_data]
+X_test <- X[-split_data, ]
+y_test <- y[-split_data]
+# scaling X
+# https://stackoverflow.com/questions/57421329/how-to-scale-test-data-with-respect-of-train-data
+X_train_scaled <- scale(X_train)
+X_test_scaled <- scale(X_test,
+                       center = attr(X_train_scaled, "scaled:center"),
+                       scale = attr(X_train_scaled, "scaled:scale"))
+# convert to df to train on svm
+df_train <- data.frame(y = factor(y_train), X_train_scaled)
+df_test <- data.frame(X_test_scaled)
+# train svm
+svm_model <- svm(y ~ ., data = df_train, kernel = "radial")
+y_pred <- predict(svm_model, newdata = df_test)
+
+# accuracy 
+eval_df <- tibble(
+  win = factor(y_test),
+  .pred_class = factor(y_pred)
+)
+
+svm_accuracy <- accuracy(eval_df, truth = win, estimate = .pred_class)$.estimate
+print(svm_accuracy)
+
+# misclassifcation rate: % of wrong predictions
+misclass_rate <- mean(y_pred != y_test) * 100
+print(misclass_rate)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
+df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
+df$lane <- as.factor(df$lane)
+df <- df[df$lane != "NONE", ]
+df <- subset(df, select =- turretsLost)
+df <- subset(df, select =- turretTakedowns)
+df$position <- NULL
+df$win <- factor(df$win)
+
+# split into training and test sets (70 train 30 test)
+set.seed(67)
+nr <- nrow(df)
+split_data <- sample(seq_len(nr), size = nrow * 0.7)
+train <- df[split_data, ]
+test <- df[-split_data, ]
+
+# converts df to numeric matrix for SVM
+# win ~ = predict win using all other columns
+X_train_numeric <- model.matrix(win ~ . -1, data = train) |>
+  as.data.frame()
+# remove columns with 0 variance (causing lots of errors)
+X_train_numeric <- X_train_numeric |> select(where(~ var(.) != 0))
+# stores target variable (win) for training (True or False)
+y_train <- train$win
+# train svm with ksvm (kernel package) instead of svm
+# converts df to numeric matrix with y_train as the target
+# C = regulation param
+svm_model_temp <- (ksvm(as.matrix(X_train_numeric), y_train,
+                        kernel = "rbfdot", C = 1, kpar = "automatic",
+                        prob.model = TRUE))
+
+# how to get predictions from model for shap
+# fastshap requires prediction functon
+pred_wrapper <- function(object, newdata) {
+  predict(object, newdata = as.matrix(newdata),
+          type = "probabilities")[, "True"]
+}
+
+set.seed(123)
+# used fastshap to extract importance info for graph
+# helps determine features that are most important in determining
+# explain() calculates aprox SHAP values for each feature in X_train_numeric
+# output = matrix of aprox SHAP values
+imp <- fastshap::explain(object = svm_model_temp, X = X_train_numeric,
+                         y = y_train, pred_wrapper = pred_wrapper, nsim = 20) |>
+  as.data.frame() |>
+  summarise(across(everything(), ~ mean(abs(.)))) |> # mean absoluite SHAP value
+  tidyr::pivot_longer(cols = everything(),
+                      names_to = "variable",
+                      values_to = "importance") |> # converts from column = features to row = features
+  arrange(desc(importance))
+
+ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  labs(
+    title = "SVM Predictor Importance",
+    x = "Predictor",
+    y = "Importance"
+  ) +
+  theme_minimal()
+```
+
+Not part of the presentation slides, creating paper's EDA here for ease
+## 2.3 Exploratory Data Analysis
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# W/L Distribution
+# add line to paper: df <- read.csv("/workspaces/project-9/sample_data/d2_250_performance.csv")
+ggplot(df, aes(x = win)) +
+  geom_bar(fill = c("#c41616", "#3eaf3e")) +
+  labs(title = "Win/Loss Distribution",
+       x = "Win",
+       y = "Count")
+
+# Summary of variables used in SVM
+# can be used to show contribution of variables -->
+df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
+df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
+
+library(knitr)
+# mock table of summary(df[, c("deaths", "kills", "dragonKills",
+# "baronKills", "firstBloodKill", "firstBloodAssist")])
+kable(
+  data.frame(
+    Event = c("Deaths", "Kills", "Dragon Kills",
+              "Baron Kills", "First Blood Kill", "First Blood Assist"),
+    Min = c(0, 0, 0, 0, 0, 0),
+    Median = c(6.5, 6.0, 0, 0, 0, 0),
+    Mean = c(6.93, 7.00, 0.33, 0.07, 0.09, 0.12),
+    Max = c(23, 48, 5, 2, 1, 1)
+  ),
+  format = "latex",
+  booktabs = FALSE,
+  caption = "Summary of SVM Predictor Variables"
+)
+
+
+# Look at new variable, goldEarned, which was the 2nd variable in SVM model that had the most influence on game outcome
+ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("False" = "#c41616",
+                               "True" = "#3eaf3e")) +
+  labs(title = "Game Outcome by Gold Earned",
+       x = "Win",
+       y = "Gold Earned")
+```
+W/L Distribution
+The Win/Loss distribution shows that the dataset is balanced, because there are almost an equal number of wins and losses. This balance is crucial for effectively training classification models, as it prevents bias and greatly affects model performance and accuracy.
+
+Summary of SVM Predictor Variables
+From the summary table of the 6 variables used in our SVM, it's observed that deaths and kills both have wide ranges, with deaths ranging from 0-23 and kills ranging from 0-48. Due to their large variability, we can infer that these features have a major impact on game outcome. 
+Dragon kills and baron kills occur less frequently, with a median of 0 for both, and on average, are not completed to their maximum potential, as not all dragons and barons that can spawn are killed in each game.
+First blood kills and first blood assists only exist during a first blood event, which typically occurs within the first 10 minutes of the game. Because these features only exist for a single event, they likely have little to no impact on the outcome of the game.
+
+Game Outcome Based on Gold Earned Boxplot
+The median gold earned for wins is higher than the median gold earned for losses, suggesting that higher gold earned is associating with winning. The distribution of gold earned based on wins has several outliers, with values above 20,000 gold. Overall, gold earned is a strong indicator for winning a game.
