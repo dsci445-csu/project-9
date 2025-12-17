@@ -44,6 +44,7 @@ output:
 
 ## Fitting an SVM
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+library(tinytex)
 library(e1071)
 library(dplyr)
 library(tidyr)
