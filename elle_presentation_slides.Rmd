@@ -167,9 +167,9 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 
 Not part of the presentation slides, creating paper's EDA here for ease
 ## 2.3 Exploratory Data Analysis
-```{r}
+```{r, fig.show='hold'}
 # W/L Distribution
-# df -> read.csv("d2_250_performance.csv")
+# add line to paper: df -> read.csv("pathto\d2_250_performance.csv")
 ggplot(df, aes(x = win)) +
   geom_bar(fill = c("#c41616", "#3eaf3e")) +
   labs(title = "Win/Loss Distribution",
@@ -183,13 +183,19 @@ summary(df[, c("deaths", "kills", "dragonKills",
 
 df$win <- factor(df$win)
 # Look at new variable, goldEarned, which was the 2nd variable in SVM model that had the most influence on game outcome
-ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
-  geom_boxplot()
+goldEarned_vis <- ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("False" = "blue",
+                               "True" = "purple"))
+print(goldEarned_vis)
 ```
-Based on the Win/Loss Distribution graph, it is clear that this dataset is almost perfectly balanced, not heavily scewed towards either Win or Loss.
-Summary table findings:
+W/L Distribution
+The Win/Loss distribution shows that the dataset is balanced, because there are almost an equal number of wins and losses. This balance is crucial for effectively training classification models, as it prevents bias and greatly affects model performance and accuracy.
+
+Summary table of 6 variables used to SVM
 * Deaths and kills both have wide ranges: deaths has a range of 0-23, and kills has a range of 0-48. Due to their large variability, we can infer these features have a major impact of game outcomes. 
 * DragonKills and baronKills happen less frequently with a median of 0 for both, and on average are not completed to their maximum level (not all dragons and barons that can spawn are killed each game).
 * First blood kill and first blood assists only exist for a first blood event, which typically occurs within the first 5-10 minutes of the game (estimate). Because these features only exist for one event, they have little to no impact on the outcome of the game.
+
 Game Outcome Based on Gold Earned Boxplot
 
