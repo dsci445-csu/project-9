@@ -159,13 +159,22 @@ ggplot(imp, aes(x = reorder(variable, importance), y = importance)) +
 Not part of the presentation slides, creating paper's EDA here for ease
 ## 2.3 Exploratory Data Analysis
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# W/L Distribution
 ggplot(df, aes(x = win)) +
   geom_bar(fill = c("#c41616", "#3eaf3e")) +
   labs(title = "Win/Loss Distribution",
        x = "Win",
        y = "Count")
+
+# Summary of variables used in SVM
+# can be used to show contribution of variables -->
+summary(df[, c("deaths", "kills", "dragonKills", "baronKills", "firstBloodKill", "firstBloodAssist")])
 ```
-Based on the Win/Loss Distribution graph, it is clear that this dataset is not heavily scewed towards Wins or Losses, yet it's almost perfectly balanced.
+Based on the Win/Loss Distribution graph, it is clear that this dataset is not heavily scewed towards either Wins or Losses, it's almost perfectly balanced between the two.
+Summary table findings:
+* Deaths and kills both have wide ranges: deaths has a range of 0-23, and kills has a range of 0-48. Due to their large variability, we can infer these features have a major impact of game outcomes. 
+* DragonKills and baronKills happen less frequently with a median of 0 for both, and on average are not completed to their maximum level (not all dragons and barons that can spawn are killed each game).
+* First blood kill and first blood assists only exist for a first blood event, which typically occurs within the first 5-10 minutes of the game (estimate). Because these features only exist for one event, they have little to no impact on the outcome of the game.
 
 ```{r}
 # SVM cross-validation graph
