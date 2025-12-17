@@ -179,8 +179,24 @@ ggplot(df, aes(x = win)) +
 # can be used to show contribution of variables -->
 df$firstBloodKill <- as.integer(as.logical(df$firstBloodKill))
 df$firstBloodAssist <- as.integer(as.logical(df$firstBloodAssist))
-summary(df[, c("deaths", "kills", "dragonKills",
-               "baronKills", "firstBloodKill", "firstBloodAssist")])
+
+library(knitr)
+# mock table of summary(df[, c("deaths", "kills", "dragonKills",
+# "baronKills", "firstBloodKill", "firstBloodAssist")])
+kable(
+  data.frame(
+    Event = c("Deaths", "Kills", "Dragon Kills",
+              "Baron Kills", "First Blood Kill", "First Blood Assist"),
+    Min = c(0, 0, 0, 0, 0, 0),
+    Median = c(6.5, 6.0, 0, 0, 0, 0),
+    Mean = c(6.93, 7.00, 0.33, 0.07, 0.09, 0.12),
+    Max = c(23, 48, 5, 2, 1, 1)
+  ),
+  format = "latex",
+  booktabs = FALSE,
+  caption = "Summary of SVM Predictor Variables"
+)
+)
 
 # Look at new variable, goldEarned, which was the 2nd variable in SVM model that had the most influence on game outcome
 ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
@@ -194,7 +210,7 @@ ggplot(df, aes(x = win, y = goldEarned, fill = win)) +
 W/L Distribution
 The Win/Loss distribution shows that the dataset is balanced, because there are almost an equal number of wins and losses. This balance is crucial for effectively training classification models, as it prevents bias and greatly affects model performance and accuracy.
 
-(In paper, create mock table for more visual appeal)
+Summary of SVM Predictor Variables
 From the summary table of the 6 variables used in our SVM, it's observed that deaths and kills both have wide ranges, with deaths ranging from 0-23 and kills ranging from 0-48. Due to their large variability, we can infer that these features have a major impact on game outcome. 
 Dragon kills and baron kills occur less frequently, with a median of 0 for both, and on average, are not completed to their maximum potential, as not all dragons and barons that can spawn are killed in each game.
 First blood kills and first blood assists only exist during a first blood event, which typically occurs within the first 10 minutes of the game. Because these features only exist for a single event, they likely have little to no impact on the outcome of the game.
